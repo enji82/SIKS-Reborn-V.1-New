@@ -33,7 +33,9 @@ function processManualForm(formData) {
     
     const blob = Utilities.newBlob(Utilities.base64Decode(formData.fileData.data), formData.fileData.mimeType, namaFile);
     const file = targetFolder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    // Changed: Remove public sharing for security
+    // file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.VIEW);
 
     sheet.appendRow([
       "'" + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MM-yyyy HH:mm:ss"), // A
@@ -287,7 +289,10 @@ function verifikasiDataSK(form) {
 
     SpreadsheetApp.flush();
     return { success: true, message: "Data diverifikasi: " + form.verifStatus };
-  } catch (e) { return { success: false, message: "Error Verifikasi: " + e.toString() }; }
+  } catch (e) { 
+    Logger.log("SK Verification error: " + e.message);
+    return { success: false, message: "Terjadi kesalahan saat verifikasi. Silakan coba lagi." }; 
+  }
 }
 
 /* ======================================================================
@@ -510,5 +515,8 @@ function getDashboardSK(filterTahun, filterSemester) {
 
     return stats;
 
-  } catch (e) { return { error: e.toString() }; }
+  } catch (e) { 
+    Logger.log("SK Stats error: " + e.message);
+    return { error: "Terjadi kesalahan saat mengambil statistik." }; 
+  }
 }

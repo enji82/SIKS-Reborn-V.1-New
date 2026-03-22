@@ -10,6 +10,12 @@ var SHEET_PTK = "Master Data GTK";
 // 1. AMBIL OPSI FILTER (UNIT & STATUS)
 function getFilterOptionsPTK() {
   try {
+    // Add caching for performance
+    const cache = CacheService.getScriptCache();
+    const cacheKey = "ptk_filter_options";
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+    
     var ss = SpreadsheetApp.openById(ID_DB_PTK);
     var sheet = ss.getSheetByName(SHEET_PTK);
     if (!sheet) return JSON.stringify({ units: [], statuses: [] });
@@ -30,11 +36,18 @@ function getFilterOptionsPTK() {
         if(data[i][18]) statusSet.add(String(data[i][18]).trim());
     }
     
-    return JSON.stringify({
+    const result = JSON.stringify({
         units: Array.from(unitSet).sort(),
         statuses: Array.from(statusSet).sort()
     });
-  } catch(e) { return JSON.stringify({ error: e.message }); }
+    
+    // Cache for 1 hour
+    cache.put(cacheKey, result, 3600);
+    return result;
+  } catch(e) { 
+    Logger.log("PTK Filter error: " + e.message);
+    return JSON.stringify({ error: "Terjadi kesalahan saat mengambil filter." }); 
+  }
 }
 
 // 2. AMBIL DATA UTAMA (OPTIMASI DISPLAY VALUES)

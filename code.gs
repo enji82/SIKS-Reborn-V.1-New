@@ -77,6 +77,52 @@ function getHalaman(namaFile) {
   }
 }
 
+// ==========================================
+// UTILITIES & SECURITY FUNCTIONS
+// ==========================================
+
+// Fungsi untuk hash password (SHA-256 dengan salt)
+function hashPassword(password) {
+  const salt = "SIKS_SALT_2024";
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password + salt)
+    .map(function(byte) { return ('0' + (byte & 0xFF).toString(16)).slice(-2); })
+    .join('');
+}
+
+// Fungsi untuk verifikasi password
+function verifyPassword(inputPassword, storedHash) {
+  return hashPassword(inputPassword) === storedHash;
+}
+
+// Fungsi untuk validasi input
+function validateInput(input, type) {
+  if (!input) return false;
+
+  switch(type) {
+    case 'username':
+      return String(input).trim().length >= 3;
+    case 'password':
+      return String(input).trim().length >= 6;
+    case 'email':
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(input));
+    default:
+      return String(input).trim().length > 0;
+  }
+}
+
+// Fungsi untuk sanitasi input
+function sanitizeInput(input, type) {
+  const cleaned = String(input).trim();
+  switch(type) {
+    case 'filename':
+      return cleaned.replace(/[^a-zA-Z0-9._-]/g, '_');
+    case 'text':
+      return cleaned.substring(0, 255);
+    default:
+      return cleaned;
+  }
+}
+
 // Alias untuk loadPage (jaga-jaga jika ada script lain yang memanggil)
 function loadPage(namaFile) { return getHalaman(namaFile); }
 
@@ -98,14 +144,20 @@ function processLogin(formObj) {
       inputPass = String(arguments[1]).trim();
     }
 
+    // Validasi input
+    if (!validateInput(inputUser, 'username') || !validateInput(inputPass, 'password')) {
+      return { status: 'error', message: 'Username minimal 3 karakter, password minimal 6 karakter.' };
+    }
+
     var ss = SpreadsheetApp.openById(SPREADSHEET_IDS.DATABASE_USER); 
     var sheet = ss.getSheetByName(SPREADSHEET_IDS.SHEET_USER_NAME);
     var data = sheet.getDataRange().getValues();
 
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
-      // Kolom A=Username, B=Password, C=Nama Lengkap, D=Role, E=Foto
-      if (String(row[0]).trim().toLowerCase() == inputUser.toLowerCase() && String(row[1]).trim() == inputPass) {
+      // Kolom A=Username, B=Password Hash, C=Nama Lengkap, D=Role, E=Foto
+      if (String(row[0]).trim().toLowerCase() == inputUser.toLowerCase() && 
+          verifyPassword(inputPass, String(row[1]).trim())) {
         
         var realName = row[2]; // Nama dari Excel
         
@@ -131,7 +183,10 @@ function processLogin(formObj) {
     }
     return { status: 'error', message: 'Username atau Password Salah.' };
   } catch (e) {
-    return { status: 'error', message: 'Error Server: ' + e.toString() };
+    Logger.log('Login error: ' + e.message);
+    return { status: 'error', message: 'Terjadi kesalahan sistem. Silakan coba lagi.' };
+  }
+}
   }
 }
 
