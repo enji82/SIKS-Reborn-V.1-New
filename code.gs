@@ -81,17 +81,18 @@ function getHalaman(namaFile) {
 // UTILITIES & SECURITY FUNCTIONS
 // ==========================================
 
-// Fungsi untuk hash password (SHA-256 dengan salt)
-function hashPassword(password) {
-  const salt = "SIKS_SALT_2024";
+// Fungsi untuk hash password (SHA-256 dengan salt unik per user)
+function hashPassword(password, username) {
+  const salt = username ? Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, username + "UNIQUE_SALT_2024")
+    .map(byte => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join('').substring(0, 16) : "SIKS_SALT_2024";
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password + salt)
     .map(function(byte) { return ('0' + (byte & 0xFF).toString(16)).slice(-2); })
     .join('');
 }
 
 // Fungsi untuk verifikasi password
-function verifyPassword(inputPassword, storedHash) {
-  return hashPassword(inputPassword) === storedHash;
+function verifyPassword(inputPassword, storedHash, username) {
+  return hashPassword(inputPassword, username) === storedHash;
 }
 
 // Fungsi untuk validasi input
@@ -115,11 +116,11 @@ function sanitizeInput(input, type) {
   const cleaned = String(input).trim();
   switch(type) {
     case 'filename':
-      return cleaned.replace(/[^a-zA-Z0-9._-]/g, '_');
+      return cleaned.replace(/[^a-zA-Z0-9._\-]/g, '_');
     case 'text':
-      return cleaned.substring(0, 255);
+      return cleaned.replace(/[<>\"'&]/g, '').substring(0, 255);
     default:
-      return cleaned;
+      return cleaned.replace(/[<>\"'&]/g, '');
   }
 }
 
@@ -157,7 +158,7 @@ function processLogin(formObj) {
       var row = data[i];
       // Kolom A=Username, B=Password Hash, C=Nama Lengkap, D=Role, E=Foto
       if (String(row[0]).trim().toLowerCase() == inputUser.toLowerCase() && 
-          verifyPassword(inputPass, String(row[1]).trim())) {
+          verifyPassword(inputPass, String(row[1]).trim(), inputUser)) {
         
         var realName = row[2]; // Nama dari Excel
         

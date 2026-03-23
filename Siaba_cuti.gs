@@ -269,7 +269,9 @@ function verifikasiPengajuan(rowBaris, status, catatan, adminName) {
             try {
                 var match = oldUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
                 if (match && match[1]) DriveApp.getFileById(match[1]).setTrashed(true);
-            } catch(e){}
+            } catch(e){
+                Logger.log('Error deleting old PDF file: ' + e.message);
+            }
         }
     }
 

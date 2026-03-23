@@ -357,7 +357,9 @@ function restoreDataSK(form) {
         try {
           var fileIdMatch = fileUrl.match(/[-\w]{25,}/);
           if (fileIdMatch) DriveApp.getFileById(fileIdMatch[0]).moveTo(DriveApp.getFolderById(FOLDER_CONFIG.MAIN_SK));
-        } catch (e) {}
+        } catch (e) {
+          Logger.log('Error moving file during restore: ' + e.message);
+        }
     }
 
     sheetActive.appendRow(cleanValues);
