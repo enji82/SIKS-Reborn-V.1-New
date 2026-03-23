@@ -378,10 +378,8 @@ function sdagama_initDataTables() {
 
                      // Penebalan dan Pemburaman Data
                      if (rawVal === "0" || rawVal === "-" || rawVal === "") {
-                         cell.textContent = '-';
-                         cell.classList.add('text-muted', 'opacity-50');
+                         cell.innerHTML = '<span class="text-muted opacity-50">-</span>';
                      } else {
-                         cell.textContent = rawVal;
                          cell.classList.add('font-weight-bold', 'text-dark');
                          // Kolom Jml (kelipatan ke-3 di dalam grup) -> Jml ada di offset +2, +5, +8 dari startIdx
                          var offset = i - (group ? group.startIdx : 6);
