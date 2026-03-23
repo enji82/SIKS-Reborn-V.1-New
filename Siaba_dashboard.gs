@@ -115,9 +115,7 @@ function getSiabaChartTrend() {
         }
       }
     });
-  } catch (e) {
-    Logger.log('Error calculating trend data: ' + e.message);
-  }
+  } catch (e) {}
 
   var json = JSON.stringify(res);
   cache.put("chart_trend_v2_final", json, 300);

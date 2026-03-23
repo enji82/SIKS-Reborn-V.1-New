@@ -99,9 +99,7 @@ function getLapbulKelolaData(filterJenjang, filterBulan, filterTahun, filterStat
                   keterangan: row[col.ket] || ""
               });
           }
-      } catch (e) {
-        Logger.log('Error processing Lapbul data: ' + e.message);
-      }
+      } catch (e) {}
       return sourceResult;
   };
 
