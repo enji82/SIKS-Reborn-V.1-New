@@ -33,9 +33,9 @@ function processManualForm(formData) {
     
     const blob = Utilities.newBlob(Utilities.base64Decode(formData.fileData.data), formData.fileData.mimeType, namaFile);
     const file = targetFolder.createFile(blob);
-    // Changed: Remove public sharing for security
-    // file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.VIEW);
+    
+    // VAKSIN IFRAME PREVIEW: Wajib menggunakan ANYONE_WITH_LINK agar bisa di-embed di Iframe SPA
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
     sheet.appendRow([
       "'" + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MM-yyyy HH:mm:ss"), // A
@@ -409,7 +409,7 @@ function getSiabaStatusData() {
 }
 
 /* ======================================================================
-   MODULE: DASHBOARD SK 
+   MODULE: DASHBOARD SK (LOGIKA KEPATUHAN AWAL SEMESTER)
    ====================================================================== */
 function getDashboardSK(filterTahun, filterSemester) {
   try {
@@ -431,52 +431,73 @@ function getDashboardSK(filterTahun, filterSemester) {
 
     var stats = {
       totalMasuk: 0, diproses: 0, revisi: 0, disetujui: 0, ditolak: 0,
-      progress: 0, belumLaporCount: 0, belumLaporList: [], recent: []
+      progress: 0, belumLaporCount: 0, belumLaporList: [], recent: [],
+      totalAwal: 0, totalPerubahan: 0, validAwal: 0, validPerubahan: 0 
     };
 
-    var sekolahSudahLapor = new Set();
+    var sekolahSudahLaporAwal = new Set();
 
+    // 1. Filter Tahun & Semester Saja
     var filteredRows = rows.filter(function(r) {
       if (!r[1]) return false;
-      
       var rTahun = String(r[2] || "").trim();
       var rSmt = String(r[3] || "").trim();
-      
       var matchTahun = (filterTahun === "" || rTahun === String(filterTahun));
       var matchSmt = (filterSemester === "" || rSmt === String(filterSemester));
-      
-      if (matchTahun && matchSmt) {
-          sekolahSudahLapor.add(String(r[1]).trim());
-          return true;
-      }
-      return false;
+      return matchTahun && matchSmt;
     });
 
     stats.totalMasuk = filteredRows.length;
 
+    // 2. Hitung Agregat Rinci
     filteredRows.forEach(function(r) {
       var s = String(r[9] || "").toLowerCase(); 
+      var kriteria = String(r[6] || "").toLowerCase();
+      var isAwal = kriteria.includes("awal");
 
-      if (s.includes("ok") || s.includes("setuju") || s.includes("valid")) stats.disetujui++;
+      // Hitung Total Masuk (Awal vs Perubahan)
+      if (isAwal) stats.totalAwal++;
+      else stats.totalPerubahan++;
+
+      var isValid = s.includes("ok") || s.includes("setuju") || s.includes("valid");
+
+      if (isValid) {
+          stats.disetujui++;
+          // Hitung Valid (Awal vs Perubahan)
+          if (isAwal) stats.validAwal++;
+          else stats.validPerubahan++;
+      }
       else if (s.includes("revisi")) stats.revisi++;
       else if (s.includes("tolak")) stats.ditolak++;
       else stats.diproses++;
+
+      // LOGIKA MUTLAK BELUM LAPOR: HANYA berdasarkan SEKOLAH UNIK "Awal Semester" yang TIDAK Ditolak
+      if (isAwal && !s.includes("tolak")) {
+          sekolahSudahLaporAwal.add(String(r[1]).trim());
+      }
     });
 
+    // 3. Kalkulasi Persentase Realisasi yang Akurat
     if (masterSekolah.length > 0) {
-        stats.belumLaporList = masterSekolah.filter(x => !sekolahSudahLapor.has(x)).sort();
+        stats.belumLaporList = masterSekolah.filter(function(x) { return !sekolahSudahLaporAwal.has(x); }).sort();
         stats.belumLaporCount = stats.belumLaporList.length;
-        stats.progress = Math.round((stats.disetujui / masterSekolah.length) * 100);
+        
+        // VAKSIN LOGIKA: Progress = (Total Sekolah - Belum Lapor) / Total Sekolah
+        // Ini memastikan hitungan murni berdasarkan JUMLAH SEKOLAH, bukan jumlah file ganda
+        var jmlSekolahSudahLapor = masterSekolah.length - stats.belumLaporCount;
+        stats.progress = Math.round((jmlSekolahSudahLapor / masterSekolah.length) * 100);
+        
+        if(stats.progress > 100) stats.progress = 100; // Pengaman visual
+        if(stats.progress < 0) stats.progress = 0;
     }
 
-    // VAKSIN PARSER ABSOLUT UNTUK WAKTU TERAKHIR
+    // 4. Sortir Aktivitas Terbaru
     function parseStringDateToTime(str) {
         if(!str || str==="" || str==="-") return 0;
         try {
             var cleanStr = String(str).replace(/['"]/g, "").trim();
             if(cleanStr === "") return 0;
-            var p = cleanStr.split(' '); 
-            var dateParts = p[0].split(/[-/]/); 
+            var p = cleanStr.split(' '); var dateParts = p[0].split(/[-/]/); 
             if(dateParts.length !== 3) return 0;
             var timeParts = (p[1] || "00:00:00").split(':');
             var y, m, d;
@@ -487,7 +508,6 @@ function getDashboardSK(filterTahun, filterSemester) {
         } catch(e) { return 0; }
     }
 
-    // Sort menggunakan kombinasi 3 kolom waktu
     var sorted = filteredRows.sort(function(a, b) {
       var timeA = Math.max(parseStringDateToTime(a[0]), parseStringDateToTime(a[10]), parseStringDateToTime(a[12]));
       var timeB = Math.max(parseStringDateToTime(b[0]), parseStringDateToTime(b[10]), parseStringDateToTime(b[12]));
@@ -504,19 +524,10 @@ function getDashboardSK(filterTahun, filterSemester) {
         if (maxTime === tEdit && tEdit > 0) displayTime = String(r[10]);
         if (maxTime === tVerif && tVerif > 0) displayTime = String(r[12]);
         
-        displayTime = displayTime.replace(/['"]/g, "").trim();
-
-        return {
-            sekolah: r[1],
-            status: r[9], 
-            waktu: displayTime.substring(0, 16) 
-        };
+        return { sekolah: r[1], status: r[9], waktu: displayTime.replace(/['"]/g, "").trim().substring(0, 16) };
     });
 
     return stats;
 
-  } catch (e) { 
-    Logger.log("SK Stats error: " + e.message);
-    return { error: "Terjadi kesalahan saat mengambil statistik." }; 
-  }
+  } catch (e) { return { error: "Terjadi kesalahan statistik." }; }
 }

@@ -102,7 +102,7 @@ function validateInput(input, type) {
     case 'username':
       return String(input).trim().length >= 3;
     case 'password':
-      return String(input).trim().length >= 6;
+      return String(input).trim().length >= 1; // Batasan 6 karakter telah dihapus
     case 'email':
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(input));
     default:
@@ -146,7 +146,7 @@ function processLogin(formObj) {
 
     // Validasi input
     if (!validateInput(inputUser, 'username') || !validateInput(inputPass, 'password')) {
-      return { status: 'error', message: 'Username minimal 3 karakter, password minimal 6 karakter.' };
+      return { status: 'error', message: 'Username minimal 3 karakter dan password tidak boleh kosong.' };
     }
 
     var ss = SpreadsheetApp.openById(SPREADSHEET_IDS.DATABASE_USER); 
@@ -155,9 +155,9 @@ function processLogin(formObj) {
 
     for (var i = 1; i < data.length; i++) {
       var row = data[i];
-      // Kolom A=Username, B=Password Hash, C=Nama Lengkap, D=Role, E=Foto
-      if (String(row[0]).trim().toLowerCase() == inputUser.toLowerCase() && 
-          verifyPassword(inputPass, String(row[1]).trim())) {
+      // Kolom A=Username, B=Password Biasa, C=Nama Lengkap, D=Role, E=Foto/Unit
+      if (String(row[0]).trim().toLowerCase() === inputUser.toLowerCase() && 
+          inputPass === String(row[1]).trim()) { // <--- BYPASS ENKRIPSI DI SINI
         
         var realName = row[2]; // Nama dari Excel
         
@@ -170,7 +170,7 @@ function processLogin(formObj) {
           nama: realName,         // KUNCI CADANGAN (Legacy Support)
           role: row[3],     
           photo: row[4] || "", 
-          unit: row[4] || "",     // Asumsi Unit ada di kolom E juga/sesuaikan
+          unit: row[5] || "",     // Sesuaikan dengan kolom Unit Anda
           isLoggedIn: true
         };
         

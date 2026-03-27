@@ -27,7 +27,7 @@
             <div id="statussk_infoCollapse" class="collapse">
               <div class="mt-2 pt-2 border-top small text-muted">
                 <ul class="mb-0 pl-3 text-dark mt-2" style="font-size: 14px; line-height: 1.6;">
-                    <li>Halaman ini menampilkan progres pengiriman SK Pembagian Tugas.</li>
+                    <li>Halaman ini menampilkan progres pengiriman SK Pembagian Tugas untuk kriteria awal semester.</li>
                     <li>Jika ikon berbentuk <span class="badge badge-danger"><i class="fas fa-times"></i></span> atau <span class="badge badge-warning"><i class="fas fa-sync-alt"></i></span> bisa diklik, silakan klik untuk melihat catatan revisi dari admin.</li>
                 </ul>
               </div>
@@ -273,7 +273,7 @@ function statussk_renderTabel(rows) {
         rowData.push(`<div class="font-weight-bold text-dark text-nowrap text-left px-2">${statussk_escapeHtml(row[0])}</div>`); 
         
         // Kolom 2 sampai 13 (Adopsi Kode Icon Sultan Baru)
-        for (var i = 1; i <= 12; i++) {
+        for (var i = 1; i < row.length; i++) { 
             var val = (row[i] !== undefined) ? row[i] : "";
             rowData.push(statussk_buildBadgeSultan(val)); 
         }

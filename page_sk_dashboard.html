@@ -37,43 +37,43 @@
     </div>
 
     <div class="row">
+        <!-- KARTU 1: TOTAL MASUK DENGAN RINCIAN -->
         <div class="col-lg-3 col-6">
-            <div class="small-box bg-white shadow-sm border-bottom-maroon">
+            <div class="small-box bg-white shadow-sm border-bottom-maroon pb-2">
                 <div class="inner">
                     <h3 class="text-dark dashsk-count-up" id="dashsk_valTotal">0</h3>
-                    <p class="text-muted font-weight-bold">TOTAL MASUK</p>
+                    <p class="text-muted font-weight-bold mb-0">TOTAL MASUK</p>
                 </div>
-                <div class="icon">
-                    <i class="fas fa-folder-open text-maroon opacity-20"></i>
-                </div>
+                <div class="icon"><i class="fas fa-folder-open text-maroon opacity-20"></i></div>
             </div>
         </div>
         
+        <!-- KARTU 2: DATA VALID DENGAN RINCIAN -->
         <div class="col-lg-3 col-6">
-            <div class="small-box bg-success shadow-sm">
+            <div class="small-box bg-success shadow-sm pb-2">
                 <div class="inner">
                     <h3 class="dashsk-count-up" id="dashsk_valDisetujui">0</h3>
-                    <p class="font-weight-bold">DATA VALID (OK)</p>
+                    <p class="font-weight-bold mb-0">DATA VALID (OK)</p>
                 </div>
                 <div class="icon"><i class="fas fa-check-circle opacity-30"></i></div>
             </div>
         </div>
 
         <div class="col-lg-3 col-6">
-            <div class="small-box bg-purple shadow-sm">
+            <div class="small-box bg-purple shadow-sm pb-2">
                 <div class="inner">
                     <h3><span class="dashsk-count-up" id="dashsk_valProgress">0</span><sup style="font-size: 20px">%</sup></h3>
-                    <p class="font-weight-bold">REALISASI</p>
+                    <p class="font-weight-bold mb-0">REALISASI <span style="font-weight:normal; font-size:11px; opacity:0.8;">(Awal Semester)</span></p>
                 </div>
                 <div class="icon"><i class="fas fa-chart-line opacity-30"></i></div>
             </div>
         </div>
 
         <div class="col-lg-3 col-6">
-            <div class="small-box bg-maroon shadow-sm cursor-pointer hover-zoom" id="dashsk_btnModalBelum">
+            <div class="small-box bg-maroon shadow-sm cursor-pointer hover-zoom pb-2" id="dashsk_btnModalBelum">
                 <div class="inner">
                     <h3 class="dashsk-count-up" id="dashsk_valBelum">0</h3>
-                    <p class="font-weight-bold text-warning">BELUM KIRIM <i class="fas fa-exclamation-circle ml-1"></i></p>
+                    <p class="font-weight-bold text-warning mb-0">BELUM KIRIM <span style="font-weight:normal; font-size:11px; opacity:0.8; color:#fff;">(Awal Semester)</span></p>
                 </div>
                 <div class="icon"><i class="fas fa-bullhorn opacity-30"></i></div>
             </div>
@@ -203,7 +203,7 @@
             </div>
             <div class="modal-body bg-light p-4">
                 <div class="alert alert-warning mb-3 py-2 px-3 small w-100 shadow-sm border-warning">
-                    <i class="fas fa-info-circle mr-1"></i> Menampilkan data periode: <b id="dashsk_lblPeriodeBelum" class="text-dark">-</b>
+                    <i class="fas fa-info-circle mr-1"></i> Menampilkan data Awal Semester periode: <b id="dashsk_lblPeriodeBelum" class="text-dark">-</b>
                 </div>
                 
                 <input type="text" class="form-control form-control-sultan mb-3 font-weight-bold" id="dashsk_inputCariBelumModal" placeholder="Ketik nama sekolah untuk mencari cepat...">
@@ -225,7 +225,6 @@
 </div>
 
 <style>
-    /* COMPLIANCE CSS */
     .border-bottom-maroon { border-bottom: 4px solid #800000 !important; }
     .bg-purple { background-color: #6f42c1 !important; color: #fff; }
     .opacity-20 { opacity: 0.2; }
@@ -234,22 +233,24 @@
 </style>
 
 <script>
-    // =================================================================
-    // BAB I: ISOLASI VARIABEL GLOBAL & PENGAMAN SINTAKSIS
-    // =================================================================
+    /* =================================================================
+       ISOLASI VARIABEL GLOBAL & PENGAMAN SINTAKSIS (ES5 BULLETPROOF)
+       ================================================================= */
     var DASHSK_CHART_INSTANCE = null;
     var DASHSK_LIST_BELUM_CACHE = []; 
     var DASHSK_USER_IS_ADMIN = false;
+    var DASHSK_IS_FETCHING = false;
+    var DASHSK_LAST_FETCH_TIME = 0;
 
     $(document).ready(function() {
         try {
             var user = typeof getSesiUser === 'function' ? getSesiUser() : {};
-            DASHSK_USER_IS_ADMIN = (user.role || "").toLowerCase().includes("admin");
+            DASHSK_USER_IS_ADMIN = (user.role || "").toLowerCase().indexOf("admin") !== -1;
         } catch(e) { DASHSK_USER_IS_ADMIN = false; }
 
         dashsk_initFilterDefault();
 
-        // VAKSIN EVENT SPA (Mencegah Stacking Event)
+        /* Bind Event Utama - Sangat Simple Tanpa Gembok Ruwet! */
         $(document).off('change', '#dashsk_filterTahun, #dashsk_filterSemester').on('change', '#dashsk_filterTahun, #dashsk_filterSemester', dashsk_loadDataDashboard);
         $(document).off('click', '#dashsk_btnRefresh').on('click', '#dashsk_btnRefresh', dashsk_loadDataDashboard);
         $(document).off('keyup', '#dashsk_cariBelumLangsung').on('keyup', '#dashsk_cariBelumLangsung', dashsk_filterBelumLangsung);
@@ -257,8 +258,10 @@
         $(document).off('click', '#dashsk_btnSalinDaftar, #dashsk_btnSalinDaftarModal').on('click', '#dashsk_btnSalinDaftar, #dashsk_btnSalinDaftarModal', dashsk_copyListBelum);
         $(document).off('click', '#dashsk_btnModalBelum').on('click', '#dashsk_btnModalBelum', dashsk_showModalBelum);
 
-        // Eksekusi Panggilan Awal
-        dashsk_loadDataDashboard();
+        /* Eksekusi Tarikan Data Pertama Secara Instan */
+        setTimeout(function() {
+            dashsk_loadDataDashboard();
+        }, 50);
     });
 
     function dashsk_initFilterDefault() {
@@ -269,7 +272,7 @@
         var htmlTahun = '';
         for (var y = 2021; y <= curYear + 1; y++) {
             var ta = y + "/" + (y + 1);
-            htmlTahun += `<option value="${ta}">${ta}</option>`;
+            htmlTahun += '<option value="' + ta + '">' + ta + '</option>';
         }
         $('#dashsk_filterTahun').html(htmlTahun);
 
@@ -277,62 +280,74 @@
         var defTahun = (curMonth >= 6) ? curYear + "/" + (curYear + 1) : (curYear - 1) + "/" + curYear;
 
         $('#dashsk_filterSemester').val(defSemester);
-        if ($(`#dashsk_filterTahun option[value='${defTahun}']`).length > 0) {
+        if ($('#dashsk_filterTahun option[value="' + defTahun + '"]').length > 0) {
             $('#dashsk_filterTahun').val(defTahun);
         }
     }
 
-    // =================================================================
-    // BAB VIII: FETCH DATA SERVER DENGAN GOOGLE SCRIPT
-    // =================================================================
+    /* =================================================================
+       FETCH DATA SERVER DENGAN PENGAMAN DOUBLE LOAD
+       ================================================================= */
     function dashsk_loadDataDashboard() {
+        var currentTime = new Date().getTime();
+        
+        /* Gembok Waktu: Tolak eksekusi jika berjarak kurang dari 1.5 detik */
+        if (currentTime - DASHSK_LAST_FETCH_TIME < 1500) { return; }
+        DASHSK_LAST_FETCH_TIME = currentTime;
+
+        /* PENGUNCI SPAM LOAD Mutlak */
+        if (DASHSK_IS_FETCHING) return; 
+        DASHSK_IS_FETCHING = true;
+
         var th = $('#dashsk_filterTahun').val();
         var sm = $('#dashsk_filterSemester').val();
         
-        // Setup Visual Loading
+        /* Setup Visual Loading */
         $('.dashsk-count-up').html('<i class="fas fa-circle-notch fa-spin text-muted small"></i>');
         $('#dashsk_timelineContainer').html('<div class="text-center p-4 text-muted"><i class="fas fa-spinner fa-spin fa-2x mb-2"></i><br>Memuat aktivitas...</div>');
         $('#dashsk_listBelumBody').html('<tr><td class="text-center p-4 text-muted"><i class="fas fa-spinner fa-spin"></i> Sinkronisasi server...</td></tr>');
 
-        $('#dashsk_btnRefresh').prop('disabled', true).html('<i class="fas fa-circle-notch fa-spin mr-1"></i> Menyinkronkan...');
+        $('#dashsk_btnRefresh').prop('disabled', true).html('<i class="fas fa-circle-notch fa-spin mr-1"></i> Memuat...');
 
         google.script.run
             .withSuccessHandler(function(data) {
+                DASHSK_IS_FETCHING = false; 
                 $('#dashsk_btnRefresh').prop('disabled', false).html('<i class="fas fa-sync-alt mr-1"></i> Refresh Data');
                 dashsk_renderDashboard(data);
             })
             .withFailureHandler(function(err) {
+                DASHSK_IS_FETCHING = false; 
                 $('#dashsk_btnRefresh').prop('disabled', false).html('<i class="fas fa-sync-alt text-danger mr-1"></i> Error');
                 Sultan.alert('error', 'Koneksi Terputus', err.message);
             })
-            .getDashboardSK(th, sm);
+            .getDashboardSK(th, sm); 
     }
 
     function dashsk_renderDashboard(data) {
         if (data.error) { Sultan.notif.gagal(data.error); return; }
 
-        // 1. ANIMATE NUMBERS KOTAK ATAS
-        dashsk_animateValue("dashsk_valTotal", data.totalMasuk);
-        dashsk_animateValue("dashsk_valDisetujui", data.disetujui);
-        dashsk_animateValue("dashsk_valProgress", data.progress);
-        dashsk_animateValue("dashsk_valBelum", data.belumLaporCount);
-        
-        // Update Info Box Detail Menengah
-        dashsk_animateValue("dashsk_valDiproses", data.diproses); 
-        dashsk_animateValue("dashsk_valRevisi", data.revisi);     
-        dashsk_animateValue("dashsk_valDitolak", data.ditolak);   
+        // VAKSIN KETERANGAN RINCI: Disuntikkan sebagai string HTML tambahan
+        var infoTotal = '<br><span class="d-block mt-1" style="font-size:11px; font-weight:normal; line-height:1.2; color:#555;">Awal Semester: ' + data.totalAwal + '<br>Perubahan: ' + data.totalPerubahan + '</span>';
+        var infoValid = '<br><span class="d-block mt-1" style="font-size:11px; font-weight:normal; line-height:1.2; color:#e0ffe0;">Awal Semester: ' + data.validAwal + '<br>Perubahan: ' + data.validPerubahan + '</span>';
 
-        // Update Text Detail pada Tabel Proporsi Chart
+        dashsk_animateValue("dashsk_valTotal", data.totalMasuk, infoTotal);
+        dashsk_animateValue("dashsk_valDisetujui", data.disetujui, infoValid);
+        
+        dashsk_animateValue("dashsk_valProgress", data.progress, "");
+        dashsk_animateValue("dashsk_valBelum", data.belumLaporCount, "");
+        
+        dashsk_animateValue("dashsk_valDiproses", data.diproses, ""); 
+        dashsk_animateValue("dashsk_valRevisi", data.revisi, "");     
+        dashsk_animateValue("dashsk_valDitolak", data.ditolak, "");   
+
         $('#dashsk_txtChartSetuju').text(data.disetujui);
         $('#dashsk_txtChartProses').text(data.diproses);
         $('#dashsk_txtChartRevisi').text(data.revisi);
         $('#dashsk_txtChartTolak').text(data.ditolak);
 
-        // 2. RENDER CHART & TIMELINE
         dashsk_renderChart(data);
         dashsk_renderTimeline(data.recent);
         
-        // 3. RENDER TABEL BELUM LAPOR
         DASHSK_LIST_BELUM_CACHE = data.belumLaporList || [];
         $('#dashsk_badgeBelumCount').text(DASHSK_LIST_BELUM_CACHE.length);
         dashsk_renderBelumList(DASHSK_LIST_BELUM_CACHE);
@@ -351,46 +366,41 @@
 
         var html = "";
         list.forEach(function(nama, i) {
-            html += `
-            <tr class="animated fadeIn border-bottom">
-                <td class="px-3 py-2 align-middle bg-white">
-                    <div class="d-flex align-items-center">
-                        <span class="badge badge-light border text-muted mr-3" style="width:30px; padding:6px 0;">${i+1}</span>
-                        <span class="text-dark font-weight-bold" style="font-size: 13px;">${nama}</span>
-                    </div>
-                </td>
-            </tr>`;
+            html += '<tr class="animated fadeIn border-bottom">' +
+                    '<td class="px-3 py-2 align-middle bg-white">' +
+                    '<div class="d-flex align-items-center">' +
+                    '<span class="badge badge-light border text-muted mr-3" style="width:30px; padding:6px 0;">' + (i+1) + '</span>' +
+                    '<span class="text-dark font-weight-bold" style="font-size: 13px;">' + nama + '</span>' +
+                    '</div></td></tr>';
         });
         
         elBody.html(html);
         elModal.html(html);
     }
 
-    // VAKSIN PENCARIAN JS (ZERO-BLINK)
     function dashsk_filterBelumLangsung() {
         var val = $('#dashsk_cariBelumLangsung').val().toLowerCase();
         $("#dashsk_listBelumBody tr").filter(function() { 
-            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1) 
+            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
         });
     }
 
     function dashsk_filterBelumModal() {
         var val = $('#dashsk_inputCariBelumModal').val().toLowerCase();
         $("#dashsk_listBelumBodyModal tr").filter(function() { 
-            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1) 
+            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
         });
     }
 
     function dashsk_showModalBelum() {
         var th = $('#dashsk_filterTahun').val() || "Semua Tahun";
         var sm = $('#dashsk_filterSemester').val() || "Semua Semester";
-        $('#dashsk_lblPeriodeBelum').text(`${sm} - TA ${th}`);
+        $('#dashsk_lblPeriodeBelum').text(sm + " - TA " + th);
         $('#dashsk_inputCariBelumModal').val("");
-        dashsk_filterBelumModal(); // reset view
+        dashsk_filterBelumModal();
         $('#dashsk_modalBelumLapor').modal('show');
     }
 
-    // BAB IV: VAKSIN BADGE SULTAN PADA TIMELINE
     function dashsk_renderTimeline(list) {
         var el = $('#dashsk_timelineContainer');
         el.empty();
@@ -404,36 +414,31 @@
             var icon = 'check-circle'; var color = 'success';
             var s = String(item.status).toLowerCase();
             
-            if(s.includes('revisi')) { icon = 'sync-alt'; color = 'info'; }
-            if(s.includes('tolak')) { icon = 'times-circle'; color = 'danger'; }
-            if(s.includes('proses')) { icon = 'clock'; color = 'warning'; }
+            if(s.indexOf('revisi') !== -1) { icon = 'sync-alt'; color = 'info'; }
+            if(s.indexOf('tolak') !== -1) { icon = 'times-circle'; color = 'danger'; }
+            if(s.indexOf('proses') !== -1) { icon = 'clock'; color = 'warning'; }
 
-            var html = `
-                <div class="list-group-item px-3 py-2 border-0 border-bottom bg-white animated fadeIn" style="animation-delay: ${idx * 50}ms">
-                    <div class="d-flex align-items-center">
-                        <div class="mr-3 text-center" style="width: 40px;">
-                            <div class="rounded-circle bg-light-sultan d-flex align-items-center justify-content-center mx-auto" style="width: 35px; height: 35px; border: 1px solid #eee;">
-                                <i class="fas fa-${icon} text-${color}"></i>
-                            </div>
-                        </div>
-                        <div style="overflow: hidden; flex: 1;">
-                            <h6 class="mb-0 text-truncate font-weight-bold text-dark" style="font-size: 13px;">${item.sekolah}</h6>
-                            <div class="mt-1 d-flex align-items-center small">
-                                <span class="badge badge-sultan badge-sultan-light-${color} mr-2"><i class="fas fa-${icon} mr-1"></i>${item.status}</span>
-                                <span class="text-muted"><i class="far fa-clock mr-1"></i>${item.waktu}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
+            var html = '<div class="list-group-item px-3 py-2 border-0 border-bottom bg-white animated fadeIn" style="animation-delay: ' + (idx * 50) + 'ms">' +
+                '<div class="d-flex align-items-center">' +
+                '<div class="mr-3 text-center" style="width: 40px;">' +
+                '<div class="rounded-circle bg-light-sultan d-flex align-items-center justify-content-center mx-auto" style="width: 35px; height: 35px; border: 1px solid #eee;">' +
+                '<i class="fas fa-' + icon + ' text-' + color + '"></i></div></div>' +
+                '<div style="overflow: hidden; flex: 1;">' +
+                '<h6 class="mb-0 text-truncate font-weight-bold text-dark" style="font-size: 13px;">' + item.sekolah + '</h6>' +
+                '<div class="mt-1 d-flex align-items-center small">' +
+                '<span class="badge badge-sultan badge-sultan-light-' + color + ' mr-2"><i class="fas fa-' + icon + ' mr-1"></i>' + item.status + '</span>' +
+                '<span class="text-muted"><i class="far fa-clock mr-1"></i>' + item.waktu + '</span>' +
+                '</div></div></div></div>';
             el.append(html);
         });
     }
 
     function dashsk_renderChart(data) {
+        if (typeof Chart === 'undefined') return;
+
         var ctx = document.getElementById('dashsk_chartStatus').getContext('2d');
         if (DASHSK_CHART_INSTANCE) DASHSK_CHART_INSTANCE.destroy();
 
-        // Mencegah error render jika semua data 0
         var totalData = data.disetujui + data.diproses + data.revisi + data.ditolak;
         var finalData = totalData === 0 ? [0.1, 0, 0, 0] : [data.disetujui, data.diproses, data.revisi, data.ditolak];
         var finalColors = totalData === 0 ? ['#e9ecef', '#ffc107', '#17a2b8', '#dc3545'] : ['#28a745', '#ffc107', '#17a2b8', '#dc3545'];
@@ -467,24 +472,26 @@
         
         var th = $('#dashsk_filterTahun').val() || "-";
         var sm = $('#dashsk_filterSemester').val() || "-";
-        var txt = `*DAFTAR SEKOLAH BELUM KIRIM SK*\nPeriode: ${th} (${sm})\n\n`;
+        var txt = "*DAFTAR SEKOLAH BELUM KIRIM SK PEMBAGIAN TUGAS*\nPeriode: " + th + " (" + sm + ")\nKriteria: AWAL SEMESTER\n\n";
         
-        DASHSK_LIST_BELUM_CACHE.forEach((nama, i) => {
-            txt += `${i+1}. ${nama}\n`;
+        DASHSK_LIST_BELUM_CACHE.forEach(function(nama, i) {
+            txt += (i+1) + ". " + nama + "\n";
         });
         
-        txt += `\n_Mohon segera mengirimkan laporan ke dalam sistem._`;
+        txt += "\n_Mohon segera mengunggah melalui SIKS-Reborn._";
 
-        navigator.clipboard.writeText(txt).then(() => Sultan.notif.sukses('Daftar berhasil disalin!'));
+        navigator.clipboard.writeText(txt).then(function() {
+            Sultan.notif.sukses('Daftar berhasil disalin!');
+        });
     }
 
-    function dashsk_animateValue(id, endValue, suffix = "") {
+    function dashsk_animateValue(id, endValue, suffixStr) {
         var obj = document.getElementById(id);
         if(!obj) return;
         var start = 0; var end = parseInt(endValue);
         if (isNaN(end)) end = 0; 
         
-        if (end === 0) { obj.innerHTML = "0" + (suffix ? `<small class="ml-1">${suffix}</small>` : ''); return; }
+        if (end === 0) { obj.innerHTML = "0" + (suffixStr || ''); return; }
         
         var duration = 800; 
         var range = end - start; 
@@ -497,7 +504,7 @@
         var timer = setInterval(function() {
             current += stepVal; 
             if (current >= end) { current = end; clearInterval(timer); }
-            obj.innerHTML = current + (suffix ? `<small class="ml-1">${suffix}</small>` : '');
+            obj.innerHTML = current + (suffixStr || '');
         }, stepTime);
     }
 </script>
