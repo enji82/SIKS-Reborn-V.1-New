@@ -19,7 +19,6 @@ function getUnitKerjaByNPSN(npsn) {
     if (!sheet) return JSON.stringify({ error: "Sheet Database_Sekolah tidak ditemukan." });
 
     const data = sheet.getDataRange().getDisplayValues();
-    // Kolom A (0) = NPSN, Kolom C (2) = Unit Kerja
     for (let i = 1; i < data.length; i++) {
       if (String(data[i][0]).trim() === String(npsn).trim()) {
         return JSON.stringify({ unitKerja: data[i][2] });
@@ -39,7 +38,6 @@ function getDatabasePegawai() {
 
     const data = sheet.getDataRange().getDisplayValues();
     let result = [];
-    // Kolom A(0)=Unit, B(1)=NIP, C(2)=Nama, D(3)=NPSN
     for (let i = 1; i < data.length; i++) {
       result.push({ unit: data[i][0], nip: data[i][1], nama: data[i][2], npsn: data[i][3] });
     }
@@ -80,7 +78,7 @@ function getDaftarLupaPresensi(tahun, bulan) {
         tanggal: row[3], jam: row[4], jenis: row[5], komulatif: row[6],     
         tglKirim: row[7], userInput: row[8], fileUrl: row[9], status: row[10],       
         tglEdit: row[11], userEdit: row[12], tglVerif: row[13], adminVerif: row[14], ket: row[15],
-        npsn: row[16] || "" // AMBIL KOLOM Q (NPSN) INDEX 16
+        npsn: row[16] || "" 
       });
     }
     return JSON.stringify(result);
@@ -147,12 +145,11 @@ function simpanLupaPresensi(dataKirim) {
 
     var timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MM-yyyy HH:mm:ss");
     
-    // SUSUNAN ARRAY DATA (HARUS BERJUMLAH 17 KOLOM A-Q)
     var rowData = [
       dataKirim.unit_kerja, dataKirim.nama_asn, dataKirim.nip_asn,
       "'" + tglSimpan, "'" + jamSimpan, dataKirim.jenis, "'" + dataKirim.komulatif,
       timestamp, dataKirim.user_login, fileUrl, "Diproses", "", "", "", "", "",
-      dataKirim.npsn // KOLOM Q (NPSN) DITULIS DI SINI!
+      dataKirim.npsn 
     ];
     sheet.appendRow(rowData);
     return "Sukses Data Berhasil Disimpan";
@@ -211,21 +208,16 @@ function updateLupaPresensi(form, fileData) {
        jamSimpan = String(jamParts[0]).padStart(2, '0') + ":" + String(jamParts[1]).padStart(2, '0');
     }
 
-    // UPDATE DATA UTAMA
     sheet.getRange(baris, 4).setValue("'" + tglSimpan);      
     sheet.getRange(baris, 5).setValue("'" + jamSimpan);      
     sheet.getRange(baris, 6).setValue(form.jenis);   
     sheet.getRange(baris, 7).setValue("'" + form.komulatif); 
     sheet.getRange(baris, 10).setValue(finalUrl);    
     
-    // =========================================================
-    // LOGIKA SULTAN: RESET STATUS & BERSIHKAN JEJAK VERIFIKASI LAMA
-    // =========================================================
-    sheet.getRange(baris, 11).setValue("Diproses"); // Kembalikan otomatis ke Diproses
-    sheet.getRange(baris, 14).setValue("");         // Hapus Tanggal Verif Lama
-    sheet.getRange(baris, 15).setValue("");         // Hapus Nama Admin Verif Lama
-    sheet.getRange(baris, 16).setValue("");         // Hapus Catatan Penolakan/Revisi Lama
-    // =========================================================
+    sheet.getRange(baris, 11).setValue("Diproses"); 
+    sheet.getRange(baris, 14).setValue("");         
+    sheet.getRange(baris, 15).setValue("");         
+    sheet.getRange(baris, 16).setValue("");         
 
     sheet.getRange(baris, 12).setValue(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MM-yyyy HH:mm:ss"));        
     sheet.getRange(baris, 13).setValue(form.user_login);
@@ -252,11 +244,15 @@ function hapusLupaPresensi(dataKirim) {
     if(String(dataKirim.kode).trim() !== validCode) throw new Error("KODE_SALAH"); 
 
     var fileUrl = sheetMain.getRange(rowIdx, 10).getValue(); 
+    
+    // VAKSIN ERROR FILE: Dipisahkan agar jika file hilang, baris excel tetap dihapus
     if (fileUrl && String(fileUrl).includes("drive")) {
         try {
             var fid = fileUrl.match(/[-\w]{25,}/);
             if(fid) DriveApp.getFileById(fid[0]).setTrashed(true); 
-        } catch(e) { console.log("Gagal hapus file drive: " + e.message); }
+        } catch(e) { 
+            console.log("Abaikan: Gagal hapus file drive, mungkin sudah terhapus. " + e.message); 
+        }
     }
 
     sheetMain.deleteRow(rowIdx);

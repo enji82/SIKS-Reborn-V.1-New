@@ -30,7 +30,8 @@
                   <li class="mb-1">Apabila ada data yang tidak sesuai, perbaiki melalui tombol <strong><i class="fas fa-pencil-alt text-warning"></i> Edit</strong> di kolom Aksi.</li>
                   <li class="mb-1">Perbaiki data Anda secara berkala, atau setiap kali ada perubahan data kepegawaian.</li>
                   <li class="mb-1">Klik tombol <strong>+ Tambah Data</strong> untuk menambahkan PTK baru.</li>
-                  <li>PTK yang mutasi menggunakan Surat Tugas silakan ditambahkan.</li>
+                  <li>PTK baru yang mutasi masuk menggunakan Surat Tugas silakan ditambahkan.</li>
+                  <li class="text-danger font-weight-bold">Untuk PTK yang Pensiun/Meninggal/Mutasi Keluar, silakan Edit data dan tuliskan keterangan di kolom "Tugas Tambahan", lalu laporkan ke Admin Korwil untuk dipindah ke Arsip Non-Aktif.</li>
                 </ul>
               </div>
             </div>
@@ -430,7 +431,15 @@ $(document).ready(function() {
     $(document).on('change', '#ptksdn_selPendidikan', ptksdn_toggleJurusanField);
     
     $(document).on('input', '#ptksdn_inputNama', function() { this.value = this.value.toUpperCase(); });
-    $(document).on('input', '#ptksdn_inputNik', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
+    $(document).on('input', '#ptksdn_inputNik', function() { 
+    var cursorPosition = this.selectionStart;
+    var originalValue = this.value;
+    var newValue = originalValue.replace(/[^0-9]/g, '');
+    if (originalValue !== newValue) {
+        this.value = newValue;
+        this.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
+    }
+});
 
     $(document).on('submit', '#ptksdn_formUtama', ptksdn_submitFormUtama);
     $(document).on('submit', '#ptksdn_formHapus', ptksdn_submitHapusPermanen);
@@ -632,7 +641,12 @@ function ptksdn_renderTabel(data) {
         // BAB III: Tombol Aksi Mutlak (Teks lengkap + Icon)
         var titleEdit = PTKSDN_IS_ADMIN ? "Edit / Mutasi" : "Edit Data";
         var btnEdit = '<button type="button" class="btn btn-sm btn-warning text-dark font-weight-bold shadow-sm" onclick="ptksdn_bukaModalEdit(\'' + row.id + '\')" title="' + titleEdit + '"><i class="fas fa-pencil-alt mr-1"></i> Edit</button>';
-        var btnHapus = '<button type="button" class="btn btn-sm btn-danger font-weight-bold shadow-sm" onclick="ptksdn_bukaModalHapus(\'' + row.id + '\', \'' + ptksdn_escapeJs(row.nama_lengkap) + '\')" title="Hapus Data"><i class="fas fa-trash-alt mr-1"></i> Hapus</button>';
+        
+        var btnHapus = "";
+        if (PTKSDN_IS_ADMIN) {
+            btnHapus = '<button type="button" class="btn btn-sm btn-danger font-weight-bold shadow-sm" onclick="ptksdn_bukaModalHapus(\'' + row.id + '\', \'' + ptksdn_escapeJs(row.nama_lengkap) + '\')" title="Pindah ke Arsip Non-Aktif"><i class="fas fa-archive mr-1"></i> Arsipkan</button>';
+        }
+        
         var btnAksi = '<div class="d-flex flex-wrap justify-content-center" style="gap:5px;">' + btnEdit + ' ' + btnHapus + '</div>';
 
         var uiNama = '<div class="font-weight-bold text-dark text-nowrap">' + ptksdn_escapeHtml(row.nama_lengkap) + '</div><div class="small text-muted text-nowrap">' + (ptksdn_escapeHtml(row.nip) || '-') + '</div>';

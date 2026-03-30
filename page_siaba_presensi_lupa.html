@@ -346,37 +346,30 @@ $(document).ready(function() {
         LUPA_USER_NPSN = user.npsn || user.username || ""; 
     } catch(e) { LUPA_USER_NPSN = ""; LUPA_IS_ADMIN = false; }
 
-    // VAKSINASI EVENT SPA DELEGATION (Pemusnahan onClick / onChange Inline)
-    // Pemicu Filter Cache (Zero Blink)
+    // VAKSINASI EVENT SPA DELEGATION
     $(document).off('change', '#lupa_filterTahun, #lupa_filterBulan, #lupa_filterStatus').on('change', '#lupa_filterTahun, #lupa_filterBulan, #lupa_filterStatus', lupa_prosesCariData);
     $(document).off('change', '#lupa_filterUnit').on('change', '#lupa_filterUnit', lupa_terapkanFilterLokal);
     
-    // Pemicu Refresh Paksa
     $(document).off('click', '#lupa_btnRefresh').on('click', '#lupa_btnRefresh', lupa_tarikDataServer);
     $(document).off('click', '#lupa_btnTambah').on('click', '#lupa_btnTambah', lupa_bukaModalTambah);
     
-    // Event Modal Forms
     $(document).off('submit', '#lupa_formUtama').on('submit', '#lupa_formUtama', lupa_submitFormUtama);
     $(document).off('submit', '#lupa_formHapus').on('submit', '#lupa_formHapus', lupa_submitHapusPermanen);
     $(document).off('submit', '#lupa_formVerif').on('submit', '#lupa_formVerif', lupa_submitVerifikasi);
     
-    // Event Form Inputs
     $(document).off('change', '#lupa_inputUnit').on('change', '#lupa_inputUnit', lupa_filterDropdownNama);
     $(document).off('change', '#lupa_inputNama').on('change', '#lupa_inputNama', lupa_filterDropdownNip);
     $(document).off('change', '#lupa_inputFile').on('change', '#lupa_inputFile', function() { lupa_prosesPilihFile(this); });
 
-    // Event Aksi Tabel Dinamis
     $(document).off('click', '.lupa-btn-verif').on('click', '.lupa-btn-verif', function() { lupa_bukaModalVerif($(this).data('id')); });
     $(document).off('click', '.lupa-btn-edit').on('click', '.lupa-btn-edit', function() { lupa_bukaModalEdit($(this).data('id')); });
     $(document).off('click', '.lupa-btn-hapus').on('click', '.lupa-btn-hapus', function() { lupa_bukaModalHapus($(this).data('id')); });
     $(document).off('click', '.lupa-btn-preview').on('click', '.lupa-btn-preview', function() { lupa_lihatPreviewPDF($(this).data('id')); });
     $(document).off('click', '.lupa-btn-catatan').on('click', '.lupa-btn-catatan', function() { lupa_lihatCatatanSultan($(this).data('pesan')); });
 
-    // VAKSIN MEMORI IFRAME
     $('#lupa_modalVerif').on('hidden.bs.modal', function () { $('#lupa_verifIframe').addClass('d-none').attr('src', ''); });
     $('#lupa_modalPreviewPDF').on('hidden.bs.modal', function () { $('#lupa_iframePreviewPDF').addClass('d-none').attr('src', ''); $('#lupa_loadingPreviewPDF').removeClass('d-none'); });
 
-    // Inisiasi Waktu Dropdown
     var thn = new Date().getFullYear();
     var $selThn = $('#lupa_filterTahun').empty();
     for(var i = thn - 3; i <= thn + 1; i++){ $selThn.append('<option value="'+i+'">'+i+'</option>'); }
@@ -459,7 +452,6 @@ function lupa_prosesCariData() {
     var bl = $('#lupa_filterBulan').val();
     if (!th) { Sultan.notif.info('Tahun harus dipilih.'); return; }
     
-    // VAKSIN CACHE CERDAS: Gunakan cache LOKAL jika Data Tahun ada, DAN (yang dicari bulan yang sama ATAU cache kita isi "Semua Bulan")
     if (th === LUPA_CACHE_THN && LUPA_CACHE_DATA.length > 0) { 
         if (bl === LUPA_CACHE_BLN || LUPA_CACHE_BLN === "") {
             lupa_terapkanFilterLokal(); 
@@ -528,7 +520,6 @@ function lupa_terapkanFilterLokal() {
         var rUnit = String(row.unit || "").trim().toUpperCase(); 
         var rStat = String(row.status || "").trim().toUpperCase();
         
-        // 1. Ekstrak Bulan dari string tanggal untuk filter lokal
         var rBulanRaw = "";
         var rawTgl = String(row.tanggal || "").replace(/'/g, "").trim();
         if (rawTgl !== "" && rawTgl !== "-") {
@@ -540,7 +531,6 @@ function lupa_terapkanFilterLokal() {
             }
         }
 
-        // 2. Filter Sekolah
         var pSekolah = false;
         if (LUPA_IS_ADMIN) {
             if (tAdminUnit === "SEMUA" || rUnit === tAdminUnit) { pSekolah = true; }
@@ -549,14 +539,12 @@ function lupa_terapkanFilterLokal() {
             else if (tUnitUser !== "" && rUnit === tUnitUser) { pSekolah = true; }
         }
         
-        // 3. Filter Status
         var pStat = true;
         if (tStat !== "") { 
             if (tStat === "DIPROSES") pStat = (rStat === "" || rStat === "DIPROSES"); 
             else pStat = rStat.includes(tStat); 
         }
 
-        // 4. Filter Bulan (Lokal)
         var pBulan = true;
         if (tBulan !== "") {
             pBulan = (rBulanRaw === tBulan);
@@ -585,7 +573,6 @@ function lupa_renderTabel(hasil) {
         var isLocked = (String(row.status).toLowerCase().includes('ok') || String(row.status).toLowerCase().includes('setuju'));
         var attrDis = isLocked ? 'disabled style="cursor:not-allowed; opacity:0.6; filter: grayscale(100%);"' : '';
         
-        // BAB III: Tombol Aksi Kepatuhan Sultan (Admin susut, User lebar)
         var txtVerif = LUPA_IS_ADMIN ? "" : " Verif";
         var txtEdit  = LUPA_IS_ADMIN ? "" : " Edit";
         var txtHapus = LUPA_IS_ADMIN ? "" : " Hapus";
@@ -595,12 +582,10 @@ function lupa_renderTabel(hasil) {
         var btnEdit  = `<button class="btn btn-sm btn-warning text-dark font-weight-bold shadow-sm lupa-btn-edit" data-id="${id}" title="Edit" ${attrDis}><i class="fas fa-pencil-alt ${marginIcon}"></i>${txtEdit}</button>`;
         var btnHapus = `<button class="btn btn-sm btn-danger font-weight-bold shadow-sm lupa-btn-hapus" data-id="${id}" title="Hapus" ${attrDis}><i class="fas fa-trash-alt ${marginIcon}"></i>${txtHapus}</button>`;
         
-        // VAKSIN TATA LETAK: flex-nowrap agar tombol sebaris
         var aksiHTML = `<div class="d-flex flex-nowrap justify-content-center" style="gap:5px;">${btnAdmin}${btnEdit}${btnHapus}</div>`;
 
         var btnFile = (row.fileUrl && row.fileUrl.length > 5) ? `<button class="btn btn-sm btn-outline-danger font-weight-bold shadow-sm lupa-btn-preview" data-id="${id}"><i class="fas fa-file-pdf mr-1"></i> Dokumen</button>` : '-';
         
-        // VAKSIN LEBAR: text-nowrap agar membentang bebas (Kolom Nama) jika layar lebar
         var txtUnitHtml = LUPA_IS_ADMIN ? `<div class="small text-danger font-weight-bold mt-1">${lupa_escapeHtml(row.unit)}</div>` : '';
         var uiNama = `<div class="font-weight-bold text-dark text-nowrap">${lupa_escapeHtml(row.nama)}</div><div class="small text-muted text-nowrap">${lupa_escapeHtml(row.nip)}</div>${txtUnitHtml}`;
         
@@ -611,19 +596,15 @@ function lupa_renderTabel(hasil) {
         dtArray.push([ aksiHTML, uiNama, uiTgl, lupa_escapeHtml((row.jam || "").substring(0, 5)), badgeJenis, (row.komulatif||'-'), btnFile, badgeStatus, metaKirim, metaEdit, metaVerif ]);
     });
 
-    // ============================================================
-    // UPDATE TURBO SEAMLESS: MUNCUL INSTAN & INISIASI (BAB VII)
-    // ============================================================
     if (isFirstLoad) {
         LUPA_TABEL_INSTANCE = $('#lupa_tabelUtama').DataTable({
             "data": dtArray,
             "destroy": true, "ordering": false, "pageLength": 10, "autoWidth": false,
-            "deferRender": true, // TRIK TURBO
+            "deferRender": true, 
             "dom": "<'row mb-2'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
                    "<'row'<'col-sm-12'<'table-responsive sultan-scroll'tr>>>" +
                    "<'row mt-2'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
             "columnDefs": [ 
-                // VAKSIN LEBAR: Kolom Aksi (Ketat), Kolom Nama (Lebar Bebas), Kolom Riwayat (Golden Ratio 10%)
                 { "targets": 0, "width": "1%", "className": "col-sticky-left bg-white align-middle border-right text-center text-nowrap" },
                 { "targets": 1, "className": "text-left align-middle" },
                 { "targets": [7,8,9,10], "width": "10%", "className": "text-left align-middle" },
@@ -688,8 +669,23 @@ function lupa_bukaModalEdit(id) {
         $('#lupa_inputNip').empty().append('<option value="' + lupa_escapeHtml(row.nip) + '">' + lupa_escapeHtml(row.nip) + '</option>').prop('disabled',true); 
     }, 200);
 
-    $('#lupa_inputTanggal').val(row.tanggal ? row.tanggal.replace(/'/g,"") : ""); 
-    $('#lupa_inputWaktu').val(row.jam ? row.jam.replace(/'/g,"").substring(0,5) : ""); 
+    // VAKSIN FORMAT TANGGAL HTML5
+    var rawTgl = row.tanggal ? row.tanggal.replace(/'/g, "") : "";
+    var tglObj = new Date(lupa_parseDateLogic(rawTgl));
+    if (!isNaN(tglObj.getTime()) && rawTgl !== "" && rawTgl !== "-") {
+        var fmtY = tglObj.getFullYear();
+        var fmtM = String(tglObj.getMonth() + 1).padStart(2, '0');
+        var fmtD = String(tglObj.getDate()).padStart(2, '0');
+        $('#lupa_inputTanggal').val(fmtY + "-" + fmtM + "-" + fmtD);
+    } else {
+        $('#lupa_inputTanggal').val("");
+    }
+
+    // VAKSIN FORMAT WAKTU
+    var rawJam = row.jam ? String(row.jam).replace(/'/g, "") : "";
+    rawJam = rawJam.replace('.', ':'); 
+    $('#lupa_inputWaktu').val(rawJam.substring(0, 5));
+
     $('#lupa_inputJenis').val(row.jenis); 
     $('#lupa_inputKomulatif').val(row.komulatif);
     
@@ -730,10 +726,18 @@ function lupa_submitFormUtama(e) {
     var cbSuccess = function(res) { 
         btn.prop('disabled', false).html(txt); 
         var pesan = String(res).toLowerCase(); 
+        
+        // VAKSIN UX MODAL
         if (pesan.includes('sukses') || pesan.includes('berhasil')) { 
-            formAktif.closest('.modal').modal('hide'); 
-            setTimeout(() => { $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('padding-right', ''); lupa_tarikDataServer(); Sultan.notif.sukses('Data berhasil disimpan.'); }, 400); 
-        } else { Sultan.alert('error', 'Gagal Menyimpan', res); } 
+            var $modal = formAktif.closest('.modal');
+            $modal.one('hidden.bs.modal', function () {
+                lupa_tarikDataServer(); 
+                Sultan.notif.sukses('Data berhasil disimpan.');
+            });
+            $modal.modal('hide'); 
+        } else { 
+            Sultan.alert('error', 'Gagal Menyimpan', res); 
+        } 
     }; 
     var cbFail = function(err) { btn.prop('disabled', false).html(txt); Sultan.alert('error', 'Koneksi Server Gagal', err.message); };
 
@@ -756,7 +760,6 @@ function lupa_lihatPreviewPDF(id) {
         $('#lupa_iframePreviewPDF').attr('src', previewUrl); 
         $('#lupa_btnUnduhPDF').attr('href', url);
         
-        // VAKSIN BAB V: Event onload & fallback 2.5s
         $('#lupa_iframePreviewPDF').off('load').on('load', function() { 
             $('#lupa_loadingPreviewPDF').addClass('d-none'); 
             $(this).removeClass('d-none'); 
@@ -800,8 +803,14 @@ function lupa_submitVerifikasi(e){
     google.script.run
         .withSuccessHandler(function(res){ 
             btn.prop('disabled',false).html(txt); 
+            // VAKSIN UX MODAL
             if (res === "Sukses" || String(res).includes("Sukses")) {
-                formAktif.closest('.modal').modal('hide'); setTimeout(() => { $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('padding-right', ''); lupa_tarikDataServer(); Sultan.notif.sukses('Status berhasil diperbarui!'); }, 400);
+                var $modal = formAktif.closest('.modal');
+                $modal.one('hidden.bs.modal', function() {
+                    lupa_tarikDataServer(); 
+                    Sultan.notif.sukses('Status berhasil diperbarui!'); 
+                });
+                $modal.modal('hide');
             } else { Sultan.alert('error', 'Gagal Verifikasi', res); }
         })
         .withFailureHandler(function(err){ btn.prop('disabled',false).html(txt); Sultan.alert('error', 'Koneksi Server Gagal', err.message); })
@@ -827,10 +836,17 @@ function lupa_submitHapusPermanen(e) {
     google.script.run
         .withSuccessHandler(function(r) {
             btn.prop('disabled', false).html(txt);
-            if (r === "KODE_SALAH") Sultan.notif.gagal('Kode Validasi keamanan salah!');
-            else if (r === "Sukses" || String(r).includes("Sukses")) { 
-                formAktif.closest('.modal').modal('hide'); setTimeout(() => { $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('padding-right', ''); lupa_tarikDataServer(); Sultan.notif.sukses('Data telah dihapus permanen.'); }, 400);
-            } else Sultan.alert('error', 'Gagal Menghapus', r);
+            // VAKSIN UX MODAL
+            if (r === "KODE_SALAH") {
+                Sultan.notif.gagal('Kode Validasi keamanan salah!');
+            } else if (r === "Sukses" || String(r).includes("Sukses")) { 
+                var $modal = formAktif.closest('.modal');
+                $modal.one('hidden.bs.modal', function() {
+                    lupa_tarikDataServer(); 
+                    Sultan.notif.sukses('Data telah dihapus permanen.'); 
+                });
+                $modal.modal('hide');
+            } else { Sultan.alert('error', 'Gagal Menghapus', r); }
         })
         .withFailureHandler(function(err){ btn.prop('disabled', false).html(txt); Sultan.alert('error', 'Koneksi Server Gagal', err.message); })
         .hapusLupaPresensi(payload);
@@ -877,11 +893,25 @@ function lupa_filterDropdownNip(){
 
 function lupa_cleanText(text) { if (text == null) return ""; return String(text).replace(/(\r\n|\n|\r)/gm, " ").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 function lupa_escapeHtml(text) { if (!text) return ""; return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
-function lupa_parseDateLogic(str){if(!str||str.length<5)return 0;var clean=String(str).replace(/'/g,"").trim();if(clean==="-"||clean==="")return 0;try{var parts=clean.split(/\s+/);var d=parts[0].split(/[-/]/);if(d.length!==3)return 0;var t=(parts[1]||"00:00:00").split(":");return new Date(parseInt(d[2]),parseInt(d[1])-1,parseInt(d[0]),parseInt(t[0]||0),parseInt(t[1]||0),parseInt(t[2]||0)).getTime();}catch(e){return 0;}}
+function lupa_parseDateLogic(str) {
+    if(!str || str.length < 5) return 0;
+    var clean = String(str).replace(/'/g,"").trim();
+    if(clean === "-" || clean === "") return 0;
+    try {
+        var parts = clean.split(/\s+/);
+        var d = parts[0].split(/[-/]/);
+        if(d.length !== 3) return 0;
+        var t = (parts[1] || "00:00:00").split(":");
+        
+        // VAKSIN DETEKSI FORMAT: YYYY-MM-DD vs DD-MM-YYYY
+        var y  = (d[0].length === 4) ? parseInt(d[0], 10) : parseInt(d[2], 10);
+        var m  = parseInt(d[1], 10) - 1;
+        var dt = (d[0].length === 4) ? parseInt(d[2], 10) : parseInt(d[0], 10);
+        
+        return new Date(y, m, dt, parseInt(t[0]||0, 10), parseInt(t[1]||0, 10), parseInt(t[2]||0, 10)).getTime();
+    } catch(e) { return 0; }
+}
 
-// =================================================================
-// HUKUM KE-6: VAKSIN POP-UP CATATAN (ANTI-HOVER)
-// =================================================================
 function lupa_escapeJs(str) { 
     if (!str) return ""; 
     return String(str).replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "<br>"); 
@@ -912,7 +942,6 @@ function lupa_buildBadgeStatus(status, ket) {
 
     if (ket && ket.trim().length > 2 && (s.includes('revisi') || s.includes('tolak'))) {
         var safeKet = lupa_escapeJs(ket);
-        // VAKSIN EVENT: Hapus onClick, gunakan class
         var btnCatatan = '<div class="mt-2"><button type="button" class="btn btn-xs btn-outline-danger font-weight-bold shadow-sm lupa-btn-catatan" style="font-size:10px; border-radius:4px;" data-pesan="' + safeKet + '"><i class="fas fa-comment-dots mr-1"></i> Baca Catatan</button></div>';
         return badgeHtml + btnCatatan;
     }

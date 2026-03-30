@@ -24,7 +24,10 @@ function dashParseDateIso(v) {
 // 3. API: AMBIL DATA METRIK & TREN PER MODUL
 function getSiabaMetric(type) {
   var cache = CacheService.getScriptCache();
-  var cacheKey = "metric_v2_final_" + type;
+  var now = new Date();
+  var curYear = now.getFullYear();
+  var curMonth = now.getMonth();
+  var cacheKey = "metric_v2_final_" + type + "_" + curYear + "_" + curMonth;
   var cached = cache.get(cacheKey);
   if (cached) return cached;
 
@@ -89,7 +92,9 @@ function getSiabaMetric(type) {
 // 4. API: AMBIL DATA GRAFIK KEDISIPLINAN (Dari File Rekap)
 function getSiabaChartTrend() {
   var cache = CacheService.getScriptCache();
-  var cached = cache.get("chart_trend_v2_final");
+  var curYear = new Date().getFullYear();
+  var cacheKey = "chart_trend_v2_final_" + curYear;
+  var cached = cache.get(cacheKey);
   if (cached) return cached;
 
   var curYear = new Date().getFullYear();

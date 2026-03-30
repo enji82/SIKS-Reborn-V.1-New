@@ -10,10 +10,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap4.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap4.min.css">
-  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css">
   
   <script>
+    // Konfigurasi AdminLTE untuk SPA (Mencegah iframe menyedot RAM)
     localStorage.setItem('AdminLTE:IFrame:Options', JSON.stringify({autoIframeMode:false}));
   </script>
   <?!= include('css_sultan'); ?>
@@ -21,7 +21,12 @@
 
 <body class="hold-transition sidebar-mini layout-fixed layout-footer-fixed layout-navbar-fixed">
 
-  <div id="gerbang-login">
+  <!-- VAKSIN LOADING SCREEN AWAL -->
+  <div id="loading-awal" style="position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background:#fff; display:flex; align-items:center; justify-content:center;">
+     <div class="text-center"><i class="fas fa-circle-notch fa-spin fa-3x text-maroon mb-3"></i><h5 class="text-maroon font-weight-bold">Memuat SIKS Reborn...</h5></div>
+  </div>
+
+  <div id="gerbang-login" style="display:none;">
     <?!= include('page_login'); ?>
   </div>
 
@@ -50,7 +55,7 @@
             <li class="user-header bg-maroon">
               <img id="dropdown-user-photo" src="" class="img-circle elevation-2" alt="User Image">
               <p>
-                <span id="dropdown-user-name-big" class="font-weight-bold">Nama Lengkap</span>
+                <span id="dropdown-user-name-big" class="font-weight-bold text-truncate w-100 d-block">Nama Lengkap</span>
                 <small id="dropdown-user-role">Jabatan</small>
               </p>
             </li>
@@ -97,7 +102,6 @@
   <script src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap4.min.js"></script>
   <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
   <script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap4.min.js"></script>
-  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
 
   <?!= include('dropdown_data'); ?>
@@ -105,7 +109,7 @@
 
   <script>
   // ============================================
-  // UPDATE UI NAVBAR (Kode Asli)
+  // UPDATE UI NAVBAR
   // ============================================
   function updateNavbarUI(user) {
       if (!user) return;
@@ -129,7 +133,7 @@
   }
 
   // ============================================
-  // BREADCRUMB (Kode Asli)
+  // BREADCRUMB
   // ============================================
   function updateBreadcrumb($activeLink, pageName) {
       var homeHtml = '<span style="cursor:pointer" class="btn-home-crumb"><i class="fas fa-home mr-1"></i> Beranda</span>';
@@ -162,71 +166,61 @@
   }
 
   // ============================================
-  // LOAD KONTEN (Diperbarui dengan Animasi & Accordion Fix)
+  // ROUTER SPA: LOAD KONTEN (Anti-Memory Leak)
   // ============================================
   function loadContent(pageName) {
     if(!pageName) return;
     
-    // --- 1. HIGHLIGHT MENU ---
+    // --- 1. HIGHLIGHT MENU (Vaksin Recursive Parent) ---
     $('.nav-link').removeClass('active'); 
     var $activeLink = $('a[data-page="' + pageName + '"]');
     $activeLink.addClass('active');
 
-    // Accordion Fix
-    $('.nav-sidebar li.menu-open').not($activeLink.parents('li')).removeClass('menu-open').children('.nav-treeview').slideUp(300);
-
-    var $parentTree = $activeLink.closest('.nav-treeview');
-    if ($parentTree.length > 0) {
-        $parentTree.show();
-        $parentTree.closest('.nav-item').addClass('menu-open');
-        $parentTree.prev('.nav-link').addClass('active');
-        
-        var $grandParentTree = $parentTree.closest('.nav-item').closest('.nav-treeview');
-        if ($grandParentTree.length > 0) {
-            $grandParentTree.show();
-            $grandParentTree.closest('.nav-item').addClass('menu-open');
-            $grandParentTree.prev('.nav-link').addClass('active');
+    // Tutup accordion yang tidak aktif, biarkan yang aktif terbuka
+    $('.nav-sidebar li.nav-item.menu-open').each(function() {
+        if (!$(this).find('a[data-page="' + pageName + '"]').length) {
+            $(this).removeClass('menu-open').children('.nav-treeview').slideUp(300);
         }
-    }
+    });
 
-    // --- 2. ENGINE ANTI-BLINK ---
+    $activeLink.parents('.nav-item').addClass('menu-open');
+    $activeLink.parents('.nav-treeview').show();
+    $activeLink.parents('.nav-item').children('.nav-link').addClass('active');
+
+    // --- 2. ENGINE ANTI-BLINK & MEMORY LEAK ---
     var $content = $('#app-content');
 
-    // A. Kunci tinggi layar saat ini agar elemen di bawahnya (Footer) tidak melompat
+    // Kunci ukuran tinggi
     $content.css('min-height', $content.height() + 'px');
 
-    // B. Mulai loading bar
-    if (typeof NProgress !== 'undefined') { 
-        NProgress.configure({ showSpinner: false, speed: 400 }); 
-        NProgress.start(); 
-    }
-
-    // C. Sembunyikan konten lama dengan mulus ke opacity 0 (Tak terlihat tapi ukurannya tetap ada)
+    if (typeof NProgress !== 'undefined') { NProgress.configure({ showSpinner: false, speed: 400 }); NProgress.start(); }
+    
     $content.css({'transition': 'opacity 0.2s ease', 'opacity': '0'});
 
-    // D. Panggil Server
     google.script.run
       .withSuccessHandler(function(html) {
         if (typeof NProgress !== 'undefined') NProgress.done();
 
-        // Beri jeda 200ms agar transisi pudarnya selesai dulu sebelum ganti DOM
         setTimeout(function() {
+            // VAKSIN MEMORY LEAK: Hancurkan semua instance DataTable yang tertinggal
+            if ($.fn.DataTable) {
+                var tables = $.fn.dataTable.fnTables(true);
+                $(tables).each(function () { $(this).dataTable().fnDestroy(); });
+            }
             
-            // E. Suntikkan HTML baru saat layar sedang "gelap"
-            // (Kita hapus div 'sultan-page-transition' karena efek transform-nya bikin blink)
+            // VAKSIN MEMORY LEAK: Kosongkan HTML lama secara total (melepas event bind jQuery)
+            $content.empty();
+            
+            // Tulis HTML Baru
             $content.html(html); 
 
-            // Paksa browser membaca struktur HTML baru (Reflow)
+            // Paksa Reflow
             void $content[0].offsetWidth; 
-
-            // F. Munculkan konten baru dengan mulus
+            
+            // Munculkan
             $content.css('opacity', '1');
 
-            // G. Lepas kunci tinggi layar setelah transisi selesai
-            setTimeout(function() { 
-                $content.css('min-height', ''); 
-            }, 300);
-
+            setTimeout(function() { $content.css('min-height', ''); }, 300);
             updateBreadcrumb($activeLink, pageName);
 
         }, 200);
@@ -234,7 +228,7 @@
       .withFailureHandler(function(err) {
         if (typeof NProgress !== 'undefined') NProgress.done();
         setTimeout(function() {
-            $content.html('<div class="alert alert-danger m-3">Gagal memuat halaman: ' + err.message + '</div>').css('opacity', '1');
+            $content.html('<div class="alert alert-danger m-3 border-danger shadow-sm"><i class="fas fa-exclamation-triangle mr-2"></i>Gagal memuat halaman: ' + err.message + '</div>').css('opacity', '1');
             $content.css('min-height', '');
         }, 200);
       })
@@ -242,7 +236,7 @@
   }
 
   // ============================================
-  // INISIALISASI (Kode Asli yang dijamin bekerja)
+  // INISIALISASI & GATEKEEPER
   // ============================================
   $(document).ready(function() {
     
@@ -251,23 +245,35 @@
     try { user = userLocal ? JSON.parse(userLocal) : null; } catch(e){}
 
     if (user) {
-        $('#gerbang-login').hide(); $('#konten-aplikasi').show(); 
-        updateNavbarUI(user); loadContent('home'); 
+        // VAKSIN KEAMANAN: Jangan langsung percaya localStorage!
+        // Tampilkan dulu layarnya, tapi diam-diam verifikasi ke server
+        $('#loading-awal').hide();
+        $('#gerbang-login').hide(); 
+        $('#konten-aplikasi').show(); 
+        updateNavbarUI(user); 
+        loadContent('home'); 
         
-        // Pengecekan Nama Usang
-        if (!user.nama_lengkap || user.nama_lengkap === user.username || user.nama_lengkap === "User Web") {
-             google.script.run.withSuccessHandler(function(res){
-                if(res.found) {
+        // Pengecekan Profil ke Server (Berfungsi ganda sebagai validasi Token/Sesi)
+        google.script.run
+            .withSuccessHandler(function(res){
+                if(res && res.found) {
                     user.nama_lengkap = res.nama_lengkap; user.nama = res.nama_lengkap;
                     user.role = res.role; user.unit = res.unit; 
                     if(res.photo) user.photo = res.photo; 
                     localStorage.setItem("siksUser", JSON.stringify(user));
                     updateNavbarUI(user);
+                } else if(res && res.kicked) {
+                    // Jika server bilang token mati/user dihapus, tendang keluar!
+                    handleLogout();
                 }
-            }).getUserProfileByName(user.username);
-        }
+            })
+            .withFailureHandler(function(){ /* Abaikan jika inet mati, percaya local dulu */ })
+            .getUserProfileByName(user.username);
+            
     } else {
-        $('#konten-aplikasi').hide(); $('#gerbang-login').show();
+        $('#loading-awal').hide();
+        $('#konten-aplikasi').hide(); 
+        $('#gerbang-login').show();
     }
 
     // Klik Sidebar
@@ -276,8 +282,10 @@
         if (pageName) {
             e.preventDefault(); 
             loadContent(pageName);
-            if ($(window).width() < 768) {
-                $('body').removeClass('sidebar-open').addClass('sidebar-closed sidebar-collapse');
+            
+            // VAKSIN SIDEBAR COLLAPSE: Gunakan Native AdminLTE
+            if ($(window).width() < 992) {
+                $('[data-widget="pushmenu"]').PushMenu('collapse');
             }
         }
     });
@@ -286,8 +294,9 @@
     $(document).on('click', '.btn-home-crumb', function(e) {
         e.preventDefault();
         loadContent('home');
-        $('.nav-sidebar .menu-open').removeClass('menu-open');
-        $('.nav-sidebar .nav-treeview').slideUp();
+        $('.nav-sidebar .menu-open').removeClass('menu-open').children('.nav-treeview').slideUp();
+        $('.nav-sidebar .nav-link').removeClass('active');
+        $('a[data-page="home"]').addClass('active');
     });
 
   });

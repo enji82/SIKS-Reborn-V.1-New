@@ -133,22 +133,30 @@ function getSekolahByNPSN(npsn) {
   } catch (e) { return { error: e.toString() }; }
 }
 
+/* ======================================================================
+   MEMUAT MASTER SEKOLAH (DENGAN PELINDUNG FORMAT TANGGAL)
+   ====================================================================== */
 function getAllSchoolsList() {
   try {
     const ss = SpreadsheetApp.openById("1wiDKez4rL5UYnpP2-OZjYowvmt1nRx-fIMy9trJlhBA");
     const sheet = ss.getSheetByName("Data_Sekolah");
     const lastRow = sheet.getLastRow();
+    
     if (lastRow < 2) return [];
 
+    // KITA KEMBALI MENGGUNAKAN getDisplayValues() AGAR AMAN DARI ERROR TANGGAL
+    // Mengambil dari Kolom A (1) sampai Kolom P (16)
     const data = sheet.getRange(2, 1, lastRow - 1, 16).getDisplayValues(); 
     
+    // Pelindung Format Tanggal
     const fmtDate = function(d) {
       if (!d) return "";
-      if (d.includes("-")) {
-         var p = d.split("-");
+      var strD = String(d).trim(); // Paksa jadi teks agar tidak error
+      if (strD.includes("-")) {
+         var p = strD.split("-");
          if(p[2] && p[2].length === 4) return p[2]+"-"+p[1]+"-"+p[0]; 
       }
-      return d;
+      return strD;
     };
 
     return data.map(function(r) {
@@ -157,22 +165,23 @@ function getAllSchoolsList() {
         jenjang: r[1],
         nama: r[2],
         status: r[3],
-        yayasan: r[4],
-        no_sk_pendirian: r[5],
-        tgl_pendirian: fmtDate(r[6]),
-        no_sk_ijin: r[7],
-        tgl_ijin: fmtDate(r[8]),
-        akreditasi: r[9],
-        skor: r[10],
-        no_sertifikat: r[11],
-        tgl_sertifikat: fmtDate(r[12]),
-        alamat: r[13],
-        telepon: r[14],
-        email: r[15],
+        yayasan: r[4],             // Kolom E
+        no_sk_pendirian: r[5],     // Kolom F
+        tgl_pendirian: fmtDate(r[6]), // Kolom G
+        no_sk_ijin: r[7],          // Kolom H
+        tgl_ijin: fmtDate(r[8]),      // Kolom I
+        akreditasi: r[9],          // Kolom J
+        skor: r[10],               // Kolom K
+        no_sertifikat: r[11],      // Kolom L
+        tgl_sertifikat: fmtDate(r[12]), // Kolom M (Tgl Sertifikat)
+        alamat: r[13],             // Kolom N (Asumsi Alamat bergeser ke N)
+        telepon: r[14],            // Kolom O
+        email: r[15],              // Kolom P
         search_key: (String(r[0]) + " " + String(r[2])).toLowerCase()
       };
     });
   } catch (e) {
+    Logger.log("Error Get Master: " + e.toString());
     return [];
   }
 }
@@ -454,10 +463,8 @@ function getRekapLapbulStatus(filterTahun) {
         var rTahun = String(row[3] || "").trim(); 
         if (filterTahun && rTahun !== String(filterTahun)) continue;
 
-        var cleanRow = [
-          row[0], row[1], String(row[2] || defaultJenjang).toUpperCase().trim(), rTahun, 
-          row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15]
-        ];
+        var cleanRow = [row[0], row[1], String(row[2] || defaultJenjang).toUpperCase().trim(), rTahun];
+        for(var c = 4; c < row.length; c++) { cleanRow.push(row[c]); }
         temp.push(cleanRow);
       }
     } catch (e) {}

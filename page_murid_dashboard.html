@@ -162,37 +162,36 @@
                 </div>
             </div>
         </div>
-    </div> </div>
+    </div> 
+  </div>
 </section>
 
 <script>
 var CHART_MURID = null;
 
 $(document).ready(function() {
-    // LOGIKA TANGGAL (DEFAULT BULAN LALU)
+    // 1. LOGIKA TANGGAL: DEFAULT BULAN LALU (VAKSIN OVERFLOW HARI)
     var d = new Date(); 
-    d.setMonth(d.getMonth() - 1); // Mundurkan 1 bulan
-    // Javascript otomatis menangani pergantian tahun. 
-    // Contoh: Jika sekarang Jan 2026 -> mundur jadi Des 2025.
+    d.setDate(1); // MENCEGAH BUG: Paksa tanggal ke 1 dulu sebelum mundur bulan
+    d.setMonth(d.getMonth() - 1); 
 
     var thn = d.getFullYear(); 
-    var bln = d.getMonth() + 1; // 1-12
+    var bln = d.getMonth() + 1; // getMonth() dimulai dari 0 (Januari = 0)
 
-    // Populate Filter Tahun (Dari Tahun Depan s.d 2022)
-    // Kita pakai 'new Date().getFullYear()' untuk batas atas loop agar opsi tahun depan tetap ada
+    // 2. POPULASI FILTER TAHUN (ES5 Murni)
     var currentRealYear = new Date().getFullYear(); 
-    var $sel = $('#dashTahun').empty();
+    var $selTahun = $('#dashTahun').empty();
     
-    for(var i = currentRealYear + 1; i >= 2022; i--){ 
-        // Jika tahun loop (i) sama dengan tahun data (thn - bulan lalu), maka select
-        var selected = (i === thn) ? 'selected' : '';
-        $sel.append(`<option value="${i}" ${selected}>${i}</option>`); 
+    // Load opsi dari tahun depan s.d 2022
+    for(var i = currentRealYear + 1; i >= 2022; i--) { 
+        var selectedStr = (i === thn) ? ' selected' : '';
+        $selTahun.append('<option value="' + i + '"' + selectedStr + '>' + i + '</option>'); 
     }
     
-    // Set Default Bulan
+    // Set default Bulan
     $('#dashBulan').val(bln);
 
-    // Init Chart & Load
+    // 3. INISIASI CHART.JS SECARA ASINKRON
     if (typeof Chart === 'undefined') {
         $.getScript("https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js")
          .done(function() { loadDashboardMurid(); });
@@ -208,11 +207,21 @@ function loadDashboardMurid() {
 
     if(!th) th = new Date().getFullYear();
 
-    // Spinner State
-    var spin = '<i class="fas fa-spinner fa-spin small"></i>';
-    $('#sd_total_t').html(spin);
-    for(var i=1; i<=6; i++) { $(`#sd_k${i}_t`).html(spin); }
-    $('#paud_tk, #paud_kb, #paud_sps').html(spin);
+    // SPINNER STATE (Memanipulasi DOM sebelum data datang)
+    var spinWhite = '<i class="fas fa-spinner fa-spin text-white-50"></i>';
+    var spinDark = '<i class="fas fa-spinner fa-spin text-dark"></i>';
+
+    $('#sd_total_t').html(spinWhite);
+    $('#sd_total_n, #sd_total_s').html(spinWhite);
+    
+    for(var i = 1; i <= 6; i++) { 
+        $('#sd_k' + i + '_t').html('<i class="fas fa-spinner fa-spin text-maroon"></i>'); 
+        $('#sd_k' + i + '_n, #sd_k' + i + '_s').html(spinDark);
+    }
+    
+    $('#paud_tk').html(spinDark);
+    $('#paud_kb').html('<i class="fas fa-spinner fa-spin text-white"></i>');
+    $('#paud_sps').html('<i class="fas fa-spinner fa-spin text-white"></i>');
 
     $('#labelBulanIni, #labelBulanIniPaud').text(namaBulan);
     $('#labelTahunGrafik').text(th);
@@ -221,34 +230,38 @@ function loadDashboardMurid() {
         .withSuccessHandler(function(jsonString) {
             try {
                 var data = JSON.parse(jsonString);
-                // Cek Log jika perlu
-                if (data.log && data.log.length > 0) { console.log(data.log.join("\n")); }
-                
                 renderCards(data.cards);
                 renderChart(data.chart);
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error("Gagal membaca struktur data: ", e); 
+            }
         })
-        .withFailureHandler(function(e) { NotifSultan.alert('error', 'Gagal', e.message); })
+        .withFailureHandler(function(e) { 
+            if (typeof Sultan !== 'undefined') {
+                Sultan.alert('error', 'Gagal Memuat Data', e.message);
+            } else {
+                alert("Koneksi gagal: " + e.message);
+            }
+        })
         .getDashboardMuridData(th, bl);
 }
 
 function renderCards(c) {
     if(!c) return;
     
-    // Animate SD Total
     $('#sd_total_t').text(c.sd_total.t);
     $('#sd_total_n').text(c.sd_total.n);
     $('#sd_total_s').text(c.sd_total.s);
 
-    // Animate Kelas 1-6
-    for(var i=1; i<=6; i++) {
+    for(var i = 1; i <= 6; i++) {
         var key = 'sd_k' + i;
-        $(`#${key}_t`).text(c[key].t);
-        $(`#${key}_n`).text(c[key].n);
-        $(`#${key}_s`).text(c[key].s);
+        if (c[key]) {
+            $('#' + key + '_t').text(c[key].t);
+            $('#' + key + '_n').text(c[key].n);
+            $('#' + key + '_s').text(c[key].s);
+        }
     }
 
-    // Animate PAUD
     $('#paud_tk').text(c.tk || 0);
     $('#paud_kb').text(c.kb || 0);
     $('#paud_sps').text(c.sps || 0);
@@ -258,7 +271,9 @@ function renderChart(c) {
     if(!c || typeof Chart === 'undefined') return;
     var ctx = document.getElementById('chartMurid').getContext('2d');
 
-    if(CHART_MURID) CHART_MURID.destroy();
+    if(CHART_MURID) {
+        CHART_MURID.destroy();
+    }
 
     CHART_MURID = new Chart(ctx, {
         type: 'line',
@@ -273,7 +288,8 @@ function renderChart(c) {
             ]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true, 
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: { legend: { position: 'bottom' } },
             scales: { y: { beginAtZero: true } }

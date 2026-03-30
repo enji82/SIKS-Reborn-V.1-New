@@ -421,7 +421,15 @@ $(document).ready(function() {
     $(document).on('change', '#ptkpaud_selPendidikan', ptkpaud_cekJurusan);
     
     $(document).on('input', '#ptkpaud_inputNama', function() { this.value = this.value.toUpperCase(); });
-    $(document).on('input', '#ptkpaud_inputNik', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
+    $(document).on('input', '#ptkpaud_inputNik', function() { 
+    var cursorPosition = this.selectionStart;
+    var originalValue = this.value;
+    var newValue = originalValue.replace(/[^0-9]/g, '');
+    if (originalValue !== newValue) {
+        this.value = newValue;
+        this.setSelectionRange(cursorPosition - 1, cursorPosition - 1);
+    }
+});
 
     $(document).on('submit', '#ptkpaud_formUtama', ptkpaud_submitFormUtama);
     $(document).on('submit', '#ptkpaud_formHapus', ptkpaud_submitHapusPermanen);

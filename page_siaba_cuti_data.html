@@ -1038,18 +1038,27 @@ function cuti_cekStatusReadOnlyHari() {
 function cuti_hitungHariCuti() { 
     var tgl1 = $('#cuti_inputTglMulai').val(); 
     var tgl2 = $('#cuti_inputTglSelesai').val(); 
+    var $jmlHari = $('#cuti_inputJumlahHari');
+    
     if (tgl1 && tgl2) { 
         var d1 = new Date(tgl1); 
         var d2 = new Date(tgl2); 
         if (d2 < d1) { 
             Sultan.alert('error', 'Error', 'Tanggal Selesai tidak valid!'); 
-            $('#cuti_inputTglSelesai').val(''); $('#cuti_inputJumlahHari').val(''); 
+            $('#cuti_inputTglSelesai').val(''); $jmlHari.val(''); 
             return; 
         } 
-        var diffTime = Math.abs(d2 - d1); 
-        var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
         
-        $('#cuti_inputJumlahHari').val(diffDays); 
+        // Hanya hitung otomatis JIKA kotak jumlah hari masih kosong atau Readonly (Terkunci)
+        // Atau jika jenis cutinya BUKAN Tahunan/Melahirkan (yang mana pasti terkunci)
+        var isLocked = $jmlHari.prop('readonly');
+        var isKosong = ($jmlHari.val() === "" || $jmlHari.val() === "0");
+
+        if (isLocked || isKosong) {
+            var diffTime = Math.abs(d2 - d1); 
+            var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+            $jmlHari.val(diffDays); 
+        }
     } 
 }
 

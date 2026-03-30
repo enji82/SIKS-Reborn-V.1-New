@@ -291,7 +291,7 @@ $(document).ready(function() {
         SALAH_USER_NPSN = user.npsn || user.username || ""; 
     } catch(e) { SALAH_USER_NPSN = ""; SALAH_IS_ADMIN = false; }
 
-    // VAKSINASI EVENT SPA DELEGATION (Pemusnahan onClick / onChange Inline)
+    // VAKSINASI EVENT SPA DELEGATION
     $(document).off('change', '#salah_filterTahun, #salah_filterBulan, #salah_filterStatus').on('change', '#salah_filterTahun, #salah_filterBulan, #salah_filterStatus', salah_prosesCariData);
     $(document).off('change', '#salah_filterUnit').on('change', '#salah_filterUnit', salah_terapkanFilterLokal);
     
@@ -398,7 +398,6 @@ function salah_prosesCariData() {
     var bl = $('#salah_filterBulan').val();
     if (!th) { Sultan.notif.info('Tahun harus dipilih.'); return; }
     
-    // VAKSIN CACHE CERDAS: Jika tahun sama dan cache mengandung "Semua Bulan", gunakan filter lokal
     if (th === SALAH_CACHE_THN && SALAH_CACHE_DATA.length > 0) {
         if (bl === SALAH_CACHE_BLN || SALAH_CACHE_BLN === "") {
             salah_terapkanFilterLokal(); 
@@ -439,7 +438,6 @@ function salah_tarikDataServer() {
                 SALAH_CACHE_THN = th; 
                 SALAH_CACHE_BLN = bl;
                 
-                // BAB VII: Inisialisasi Murni 1X Saja (Tanpa createdRow)
                 if (!$.fn.DataTable.isDataTable('#salah_tabelUtama')) {
                     SALAH_TABEL_INSTANCE = $('#salah_tabelUtama').DataTable({
                         "destroy": true, "ordering": false, "pageLength": 10, "autoWidth": false,
@@ -448,7 +446,6 @@ function salah_tarikDataServer() {
                                "<'row'<'col-sm-12'<'table-responsive sultan-scroll'tr>>>" +
                                "<'row mt-2'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
                         "columnDefs": [ 
-                            // VAKSIN PROPORSI GOLDEN RATIO: Aksi(1%), Nama(Auto), Meta(12%)
                             { "targets": 0, "width": "1%", "className": "col-sticky-left bg-white align-middle border-right text-center text-nowrap" },
                             { "targets": 1, "className": "text-left align-middle" },
                             { "targets": [2,3,4,5], "width": "1%", "className": "text-center align-middle text-nowrap" },
@@ -460,7 +457,6 @@ function salah_tarikDataServer() {
 
                 salah_terapkanFilterLokal(); 
                 
-                // BAB VII: Tampil seketika tanpa animasi fadeIn
                 $('#salah_loadingState').hide();
                 $('#salah_tableState').show();
                 if(SALAH_TABEL_INSTANCE) {
@@ -495,7 +491,6 @@ function salah_terapkanFilterLokal() {
         var rUnit = String(row.unit || "").trim().toUpperCase(); 
         var rStat = String(row.status || "").trim().toUpperCase();
         
-        // 1. Ekstraktor Bulan Otomatis dari string "YYYY-MM-DD" / "DD-MM-YYYY"
         var rBulanRaw = "";
         var rawTgl = String(row.tanggal || "").replace(/'/g, "").trim();
         if (rawTgl !== "" && rawTgl !== "-") {
@@ -507,7 +502,6 @@ function salah_terapkanFilterLokal() {
             }
         }
 
-        // 2. Filter Unit
         var pSekolah = false;
         if (SALAH_IS_ADMIN) {
             if (tAdminUnit === "SEMUA" || rUnit === tAdminUnit) pSekolah = true;
@@ -516,14 +510,12 @@ function salah_terapkanFilterLokal() {
             else if (tUnitUser !== "" && rUnit === tUnitUser) pSekolah = true;
         }
         
-        // 3. Filter Status
         var pStat = true;
         if (tStat !== "") { 
             if (tStat === "DIPROSES") pStat = (rStat === "" || rStat === "DIPROSES"); 
             else pStat = rStat.includes(tStat); 
         }
 
-        // 4. Filter Bulan
         var pBulan = true;
         if (tBulan !== "") {
             pBulan = (rBulanRaw === tBulan);
@@ -551,7 +543,6 @@ function salah_renderTabel(hasil) {
         var isLocked = (String(row.status).toLowerCase().includes('ok') || String(row.status).toLowerCase().includes('setuju'));
         var attrDis = isLocked ? 'disabled style="cursor:not-allowed; opacity:0.6; filter: grayscale(100%);"' : '';
         
-        // BAB III: Tombol Aksi Kepatuhan Sultan (Admin susut menjadi icon-only)
         var txtVerif = SALAH_IS_ADMIN ? "" : " Verif";
         var txtEdit  = SALAH_IS_ADMIN ? "" : " Edit";
         var txtHapus = SALAH_IS_ADMIN ? "" : " Hapus";
@@ -561,10 +552,8 @@ function salah_renderTabel(hasil) {
         var btnEdit  = `<button type="button" class="btn btn-sm btn-warning text-dark font-weight-bold shadow-sm salah-btn-edit" data-id="${id}" title="Edit" ${attrDis}><i class="fas fa-pencil-alt ${marginIcon}"></i>${txtEdit}</button>`;
         var btnHapus = `<button type="button" class="btn btn-sm btn-danger font-weight-bold shadow-sm salah-btn-hapus" data-id="${id}" title="Hapus" ${attrDis}><i class="fas fa-trash-alt ${marginIcon}"></i>${txtHapus}</button>`;
         
-        // VAKSIN TATA LETAK: flex-nowrap agar tombol stabil sebaris
         var aksiHTML = `<div class="d-flex flex-nowrap justify-content-center" style="gap:5px;">${btnAdmin}${btnEdit}${btnHapus}</div>`;
 
-        // VAKSIN LEBAR NAMA ASN: Kelas text-nowrap dihapus agar bisa wrap jika terpaksa
         var txtUnitHtml = SALAH_IS_ADMIN ? `<div class="small text-danger font-weight-bold mt-1">${salah_escapeHtml(row.unit)}</div>` : '';
         var uiNama   = `<div class="font-weight-bold text-dark">${salah_escapeHtml(row.nama)}</div><div class="small text-muted">${salah_escapeHtml(row.nip)}</div>${txtUnitHtml}`;
         
@@ -582,7 +571,6 @@ function salah_renderTabel(hasil) {
         $('#salah_tableState').show();
     }
     
-    // Vaksin micro blink (mengamankan adjust column)
     setTimeout(function(){ SALAH_TABEL_INSTANCE.columns.adjust(); }, 50);
 }
 
@@ -630,7 +618,24 @@ function salah_bukaModalEdit(id) {
         $('#salah_inputNip').empty().append('<option value="' + salah_escapeHtml(tNip) + '">' + salah_escapeHtml(tNip) + '</option>').prop('disabled', true); 
     }, 200);
 
-    $('#salah_inputTanggal').val(row.tanggal ? row.tanggal.replace(/'/g,"") : ""); $('#salah_inputWaktu').val(row.jam ? row.jam.replace(/'/g,"").substring(0,5) : ""); $('#salah_inputJenis').val(row.jenis); 
+    // VAKSIN FORMAT TANGGAL
+    var rawTgl = row.tanggal ? row.tanggal.replace(/'/g, "") : "";
+    var tglObj = new Date(salah_parseDateLogic(rawTgl));
+    if (!isNaN(tglObj.getTime()) && rawTgl !== "" && rawTgl !== "-") {
+        var fmtY = tglObj.getFullYear();
+        var fmtM = String(tglObj.getMonth() + 1).padStart(2, '0');
+        var fmtD = String(tglObj.getDate()).padStart(2, '0');
+        $('#salah_inputTanggal').val(fmtY + "-" + fmtM + "-" + fmtD);
+    } else {
+        $('#salah_inputTanggal').val("");
+    }
+
+    // VAKSIN FORMAT WAKTU
+    var rawJam = row.jam ? String(row.jam).replace(/'/g, "") : "";
+    rawJam = rawJam.replace('.', ':'); 
+    $('#salah_inputWaktu').val(rawJam.substring(0, 5));
+
+    $('#salah_inputJenis').val(row.jenis); 
     $('#salah_inputNipLama').val(row.nip); $('#salah_inputTglLama').val(row.tanggal); $('#salah_inputJamLama').val(row.jam); 
 }
 
@@ -661,8 +666,13 @@ function salah_submitFormUtama(e) {
         btn.prop('disabled', false).html(txt); 
         var pesan = String(res).toLowerCase(); 
         if (pesan.includes('sukses') || pesan.includes('berhasil')) { 
-            formAktif.closest('.modal').modal('hide'); 
-            setTimeout(() => { $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('padding-right', ''); salah_tarikDataServer(); Sultan.notif.sukses('Data berhasil disimpan.'); }, 400); 
+            // VAKSIN UX LIFECYCLE MODAL
+            var $modal = formAktif.closest('.modal');
+            $modal.one('hidden.bs.modal', function () {
+                salah_tarikDataServer(); 
+                Sultan.notif.sukses('Data berhasil disimpan.');
+            });
+            $modal.modal('hide'); 
         } else { Sultan.alert('error', 'Gagal Menyimpan', res); } 
     }; 
     var cbFail = function(err) { btn.prop('disabled', false).html(txt); Sultan.alert('error', 'Koneksi Terputus', err.message); };
@@ -692,8 +702,13 @@ function salah_submitHapusPermanen(e) {
         btn.prop('disabled', false).html(txt);
         if (r === "KODE_SALAH") Sultan.notif.gagal('Kode Validasi keamanan salah!');
         else if (r === "Sukses" || String(r).includes("Sukses")) { 
-            formAktif.closest('.modal').modal('hide'); 
-            setTimeout(() => { $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('padding-right', ''); salah_tarikDataServer(); Sultan.notif.sukses('Data dihapus permanen.'); }, 400); 
+            // VAKSIN UX LIFECYCLE MODAL
+            var $modal = formAktif.closest('.modal');
+            $modal.one('hidden.bs.modal', function () {
+                salah_tarikDataServer(); 
+                Sultan.notif.sukses('Data dihapus permanen.');
+            });
+            $modal.modal('hide'); 
         } else Sultan.alert('error', 'Gagal Menghapus', r);
     }).hapusSalahAbsen(payload);
 }
@@ -724,8 +739,13 @@ function salah_submitVerifikasi(e){
         .withSuccessHandler(function(res){ 
             btn.prop('disabled', false).html(txt); 
             if (res === "Sukses" || String(res).includes("Sukses")) {
-                formAktif.closest('.modal').modal('hide'); 
-                setTimeout(() => { $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('padding-right', ''); salah_tarikDataServer(); Sultan.notif.sukses('Status diperbarui!'); }, 400);
+                // VAKSIN UX LIFECYCLE MODAL
+                var $modal = formAktif.closest('.modal');
+                $modal.one('hidden.bs.modal', function () {
+                    salah_tarikDataServer(); 
+                    Sultan.notif.sukses('Status diperbarui!');
+                });
+                $modal.modal('hide'); 
             } else { Sultan.alert('error', 'Gagal Verifikasi', res); }
         })
         .withFailureHandler(function(err){ btn.prop('disabled', false).html(txt); Sultan.alert('error', 'Koneksi Terputus', err.message); })
@@ -742,9 +762,12 @@ function salah_filterDropdownNama(){
     var $selNip = $('#salah_inputNip').empty().append('<option value="">- Otomatis -</option>').prop('disabled',true);
     
     var unitTerpilih = String($('#salah_inputUnit').val() || "").trim();
-    if (!unitTerpilih) return; 
+    if (SALAH_IS_ADMIN && !unitTerpilih) return; 
 
-    var filtered = SALAH_DB_PEGAWAI.filter(x => String(x.unit).trim() === unitTerpilih);
+    // VAKSIN GATEKEEPER NAMA
+    var filtered = SALAH_IS_ADMIN 
+        ? SALAH_DB_PEGAWAI.filter(x => String(x.unit).trim() === unitTerpilih) 
+        : SALAH_DB_PEGAWAI.filter(x => String(x.npsn).trim() === String(SALAH_USER_NPSN).trim());
         
     var unikNama = [...new Set(filtered.map(item => String(item.nama).trim()))].sort();
     
@@ -766,7 +789,10 @@ function salah_filterDropdownNip(){
         return; 
     }
     
-    var kandidat = SALAH_DB_PEGAWAI.filter(x => String(x.unit).trim() === unitTerpilih && String(x.nama).trim() === nama);
+    // VAKSIN GATEKEEPER NIP
+    var kandidat = SALAH_IS_ADMIN 
+        ? SALAH_DB_PEGAWAI.filter(x => String(x.unit).trim() === unitTerpilih && String(x.nama).trim() === nama)
+        : SALAH_DB_PEGAWAI.filter(x => String(x.npsn).trim() === String(SALAH_USER_NPSN).trim() && String(x.nama).trim() === nama);
 
     if(kandidat.length === 1){
         var cNip = String(kandidat[0].nip).trim();
@@ -785,7 +811,24 @@ function salah_filterDropdownNip(){
 
 function salah_cleanText(text){if(!text)return"";return String(text).replace(/(\r\n|\n|\r)/gm," ").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
 function salah_escapeHtml(text){if(!text)return"";return String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
-function salah_parseDateLogic(str){if(!str||str.length<5)return 0;var clean=String(str).replace(/'/g,"").trim();if(clean==="-"||clean==="")return 0;try{var parts=clean.split(/\s+/);var d=parts[0].split(/[-/]/);if(d.length!==3)return 0;var t=(parts[1]||"00:00:00").split(":");return new Date(parseInt(d[2]),parseInt(d[1])-1,parseInt(d[0]),parseInt(t[0]||0),parseInt(t[1]||0),parseInt(t[2]||0)).getTime();}catch(e){return 0;}}
+function salah_parseDateLogic(str) {
+    if(!str || str.length < 5) return 0;
+    var clean = String(str).replace(/'/g,"").trim();
+    if(clean === "-" || clean === "") return 0;
+    try {
+        var parts = clean.split(/\s+/);
+        var d = parts[0].split(/[-/]/);
+        if(d.length !== 3) return 0;
+        var t = (parts[1] || "00:00:00").split(":");
+        
+        // VAKSIN DETEKSI FORMAT: YYYY-MM-DD vs DD-MM-YYYY
+        var y  = (d[0].length === 4) ? parseInt(d[0], 10) : parseInt(d[2], 10);
+        var m  = parseInt(d[1], 10) - 1;
+        var dt = (d[0].length === 4) ? parseInt(d[2], 10) : parseInt(d[0], 10);
+        
+        return new Date(y, m, dt, parseInt(t[0]||0, 10), parseInt(t[1]||0, 10), parseInt(t[2]||0, 10)).getTime();
+    } catch(e) { return 0; }
+}
 
 function salah_escapeJs(str) { 
     if (!str) return ""; 

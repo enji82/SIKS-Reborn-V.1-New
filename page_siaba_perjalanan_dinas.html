@@ -404,8 +404,10 @@ $(document).ready(function(){
     $(document).off('click', '#perdin_btnRefresh').on('click', '#perdin_btnRefresh', perdin_tarikDataServer);
     $(document).off('click', '#perdin_btnTambah').on('click', '#perdin_btnTambah', perdin_bukaModalTambah);
     
+    // VAKSIN KEYDOWN ENTER: Tetap dipertahankan untuk antisipasi keyboard enter
     $(document).off('keydown', '#perdin_inputNoSpt').on('keydown', '#perdin_inputNoSpt', function(e) { if(e.keyCode==13) { e.preventDefault(); perdin_cekNoSptUnified(); }});
     $(document).off('click', '#perdin_btnCariSpt').on('click', '#perdin_btnCariSpt', perdin_cekNoSptUnified);
+    
     $(document).off('click', '#perdin_btnTambahAsn').on('click', '#perdin_btnTambahAsn', perdin_toggleCariPeserta);
     $(document).off('click', '#perdin_btnCloseCariPegawai').on('click', '#perdin_btnCloseCariPegawai', perdin_toggleCariPeserta);
     $(document).off('keyup', '#perdin_inputCariPegawai').on('keyup', '#perdin_inputCariPegawai', function() { perdin_cariPegawaiUni(this.value); });
@@ -637,7 +639,7 @@ function perdin_renderTabel(data) {
 }
 
 // =================================================================
-// 4. LOGIKA MODAL FORM
+// 4. LOGIKA MODAL FORM (VAKSIN ANTI-MACET)
 // =================================================================
 function perdin_bukaModalEdit(rowId) { 
     var row = PERDIN_DATA_MASTER[rowId];
@@ -653,106 +655,149 @@ function perdin_bukaModalEdit(rowId) {
 }
 
 function perdin_bukaModalTambah() { 
-  PERDIN_UNI_IS_NEW_SPT = true; PERDIN_UNI_TEMP_PESERTA = []; PERDIN_IS_FORM_LOCKED = false; 
-  $('#perdin_inputNoSpt').val('').prop('disabled', false); 
-  
-  $('#perdin_formUtama')[0].reset();
-  $('#perdin_formUtama').removeClass('was-validated');
-  
-  $('#perdin_msgCekSpt').removeClass('text-success text-danger text-warning text-info').addClass('text-muted').html('Tekan <b>Enter</b> atau klik ikon cari untuk memulai.'); 
-  
-  $('#perdin_headerModalForm').removeClass('bg-warning').addClass('bg-maroon');
-  $('#perdin_judulModalForm').css('color', '#ffffff').html('<i class="fas fa-file-signature mr-2"></i>Formulir Perjalanan Dinas');
-  $('#perdin_closeModalForm').removeClass('text-dark').addClass('text-white');
+    PERDIN_UNI_IS_NEW_SPT = true; 
+    PERDIN_UNI_TEMP_PESERTA = []; 
+    PERDIN_IS_FORM_LOCKED = false; 
+    
+    // VAKSIN EXPLICIT RESET: Mencegah tombol terkunci dari sesi sebelumnya
+    $('#perdin_inputNoSpt').val('').prop('disabled', false); 
+    $('#perdin_btnCariSpt').prop('disabled', false).html('<i class="fas fa-search"></i>');
+    
+    $('#perdin_formUtama')[0].reset();
+    $('#perdin_formUtama').removeClass('was-validated');
+    
+    $('#perdin_msgCekSpt').removeClass('text-success text-danger text-warning text-info text-maroon').addClass('text-muted').html('Tekan <b>Enter</b> atau klik ikon cari untuk memulai.'); 
+    
+    $('#perdin_headerModalForm').removeClass('bg-warning').addClass('bg-maroon');
+    $('#perdin_judulModalForm').css('color', '#ffffff').html('<i class="fas fa-file-signature mr-2"></i>Formulir Perjalanan Dinas');
+    $('#perdin_closeModalForm').removeClass('text-dark').addClass('text-white');
 
-  $('#perdin_areaFormUtama').hide(); $('#perdin_btnSimpanForm').hide(); 
-  perdin_lockFormControls(false); 
-  
-  $('.custom-file-label').removeClass("selected text-success font-weight-bold").html('Pilih file...'); 
-  $('#perdin_divUniFile').show(); 
-  $('#perdin_badgeStatusSpt').attr('class', 'float-right badge badge-sultan badge-sultan-light-info').text('BARU'); 
-  
-  $('#perdin_panelCariPegawai').hide(); $('#perdin_inputCariPegawai').val(''); $('#perdin_hasilCari').html(''); 
-  perdin_renderTabelPeserta(); 
-  
-  $('#perdin_inputUserLogin').val(PERDIN_USER_AKTIF); 
-  $('#perdin_modalForm').modal('show'); 
-  
-  setTimeout(() => { $('#perdin_inputNoSpt').focus(); }, 400);
+    $('#perdin_areaFormUtama').hide(); 
+    $('#perdin_btnSimpanForm').hide(); 
+    perdin_lockFormControls(false); 
+    
+    $('.custom-file-label').removeClass("selected text-success font-weight-bold").html('Pilih file...'); 
+    $('#perdin_divUniFile').show(); 
+    $('#perdin_badgeStatusSpt').attr('class', 'float-right badge badge-sultan badge-sultan-light-info').text('BARU'); 
+    
+    $('#perdin_panelCariPegawai').hide(); $('#perdin_inputCariPegawai').val(''); $('#perdin_hasilCari').html(''); 
+    perdin_renderTabelPeserta(); 
+    
+    $('#perdin_inputUserLogin').val(PERDIN_USER_AKTIF); 
+    $('#perdin_modalForm').modal('show'); 
+    
+    setTimeout(() => { $('#perdin_inputNoSpt').focus(); }, 400);
 }
 
-function perdin_cekNoSptUnified() { 
-    var noSpt = $('#perdin_inputNoSpt').val().trim(); 
-    if (noSpt.length < 3) { Sultan.notif.info('Ketik minimal 3 karakter Nomor SPT.'); return; } 
-    
-    $('#perdin_inputNoSpt').prop('disabled', true); 
-    $('#perdin_btnCariSpt').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-    $('#perdin_msgCekSpt').html('<i class="fas fa-spinner fa-spin text-maroon mr-1"></i> Mencari riwayat server...'); 
-    
-    google.script.run.withSuccessHandler(function(json){ 
-        var res = JSON.parse(json); 
-        $('#perdin_btnCariSpt').prop('disabled', false).html('<i class="fas fa-search"></i>');
-        $('#perdin_areaFormUtama').show(); 
+// VAKSIN FUNGSI PENCARIAN (Global Scope & Try-Catch)
+window.perdin_cekNoSptUnified = function() { 
+    try {
+        var inputEl = $('#perdin_inputNoSpt');
+        var btnEl = $('#perdin_btnCariSpt');
+        var msgEl = $('#perdin_msgCekSpt');
         
-        if (res.found) { 
-            PERDIN_UNI_IS_NEW_SPT = false; 
-            $('#perdin_formUtama').removeClass('was-validated');
-            $('#perdin_inputJenis').val(res.data.jenis); 
-            $('#perdin_inputTglSpt').val(res.data.tglSpt); 
-            $('#perdin_inputTglMulai').val(res.data.tglMulai); 
-            $('#perdin_inputTglSelesai').val(res.data.tglSelesai); 
-            $('#perdin_inputTujuan').val(res.data.tujuan); 
-            $('#perdin_inputKegiatan').val(res.data.kegiatan); 
-            $('#perdin_inputJenisDok').val(res.data.jenisDok || 'SPT'); 
-            
-            var st = String(res.data.status || "").toLowerCase(); 
-            var currentDok = String(res.data.jenisDok || "").toUpperCase();
-            
-            if (st.includes('setuju') || st.includes('acc') || st.includes('ok')) {
-                if (currentDok !== 'SPT') {
-                    $('#perdin_fieldHeader').prop('disabled', false); 
-                    $('#perdin_inputJenis, #perdin_inputTglSpt, #perdin_inputTglMulai, #perdin_inputTglSelesai, #perdin_inputTujuan, #perdin_inputKegiatan').prop('disabled', true).addClass('bg-light');
-                    $('#perdin_divUniFile').show(); 
-                    $('#perdin_inputJenisDok').prop('disabled', false).removeClass('bg-light'); 
-                    $('#perdin_inputFile').prop('disabled', false).prop('required', true);     
-                    $('#perdin_reqFileAsterisk').show();
-                    $('#perdin_btnSimpanForm').show().html('<i class="fas fa-sync mr-2"></i> UPDATE DOKUMEN');
-                    $('#perdin_msgCekSpt').removeClass('text-muted text-success text-info text-primary').addClass('text-warning font-weight-bold').html('<i class="fas fa-exclamation-triangle mr-1"></i> SPT Disetujui: Menunggu Dokumen Final PDF.');
-                } else {
-                    perdin_lockFormControls(true, res.data.status); 
-                    $('#perdin_inputFile').prop('required', false);
-                    $('#perdin_reqFileAsterisk').hide();
-                    $('#perdin_msgCekSpt').removeClass('text-muted text-warning text-info text-primary').addClass('text-success font-weight-bold').html('<i class="fas fa-check-circle mr-1"></i> Terdaftar & Final. (Mode Hanya Baca)');
-                }
-            } else { 
-                perdin_lockFormControls(false); 
-                $('#perdin_fieldHeader').prop('disabled', false); 
-                $('#perdin_inputJenis, #perdin_inputTglSpt, #perdin_inputTglMulai, #perdin_inputTglSelesai, #perdin_inputTujuan, #perdin_inputKegiatan').prop('disabled', false).removeClass('bg-light');
-                $('#perdin_divUniFile').show(); 
-                $('#perdin_inputJenisDok, #perdin_inputFile').prop('disabled', false);
-                $('#perdin_inputFile').prop('required', false); 
-                $('#perdin_reqFileAsterisk').hide();
-                
-                var statusIcon = st.includes('tolak') ? '<i class="fas fa-times-circle mr-1"></i>' : '<i class="fas fa-pencil-alt mr-1"></i>';
-                var statusColor = st.includes('tolak') ? 'text-danger' : 'text-primary';
-                $('#perdin_msgCekSpt').removeClass('text-muted text-success text-warning text-info').addClass(statusColor).html(statusIcon + ' Status Pengajuan: ' + perdin_escapeHtml(res.data.status) + ' (Mode Edit).');
-                $('#perdin_btnSimpanForm').show().html('<i class="fas fa-save mr-2"></i> SIMPAN PERUBAHAN');
-            }
-            perdin_loadPesertaExisting(noSpt); 
-        } else { 
-            PERDIN_UNI_IS_NEW_SPT = true; PERDIN_UNI_TEMP_PESERTA = []; perdin_lockFormControls(false);
-            $('#perdin_formUtama').removeClass('was-validated');
-            $('#perdin_fieldHeader').prop('disabled', false); 
-            $('#perdin_inputJenis, #perdin_inputTglSpt, #perdin_inputTglMulai, #perdin_inputTglSelesai, #perdin_inputTujuan, #perdin_inputKegiatan, #perdin_inputJenisDok, #perdin_inputFile').prop('disabled', false).removeClass('bg-light');
-            $('#perdin_inputFile').prop('required', true); 
-            $('#perdin_reqFileAsterisk').show();
-            $('#perdin_btnSimpanForm').show().html('<i class="fas fa-save mr-2"></i> SIMPAN SPT BARU');
-            $('#perdin_msgCekSpt').removeClass('text-muted text-success text-warning text-primary text-danger').addClass('text-info font-weight-bold').html('<i class="fas fa-plus-circle mr-1"></i> Membuat Rekam SPT Baru.'); 
-            $('#perdin_badgeStatusSpt').attr('class', 'float-right badge badge-sultan badge-sultan-light-info').text('BARU'); 
-            perdin_renderTabelPeserta(); 
+        var valRaw = inputEl.val();
+        if (valRaw === undefined || valRaw === null) {
+            console.error("Input pencarian SPT tidak ditemukan di DOM.");
+            return;
+        }
+        var noSpt = String(valRaw).trim();
+        
+        // Cek minimal karakter dengan fallback alert jika notifikasi mati
+        if (noSpt.length < 3) { 
+            try { Sultan.notif.info('Ketik minimal 3 karakter Nomor SPT.'); } 
+            catch(e) { alert('Ketik minimal 3 karakter Nomor SPT.'); }
+            inputEl.focus();
+            return; 
         } 
-    }).cekInfoSpt(noSpt); 
-}
+        
+        inputEl.prop('disabled', true); 
+        btnEl.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+        msgEl.removeClass('text-muted text-danger text-success text-info').addClass('text-maroon font-weight-bold').html('<i class="fas fa-spinner fa-spin mr-1"></i> Mencari riwayat server...'); 
+        
+        google.script.run
+            .withSuccessHandler(function(json){ 
+                try {
+                    var res = JSON.parse(json); 
+                    btnEl.prop('disabled', false).html('<i class="fas fa-search"></i>');
+                    $('#perdin_areaFormUtama').slideDown('fast'); 
+                    
+                    if (res.found) { 
+                        PERDIN_UNI_IS_NEW_SPT = false; 
+                        $('#perdin_formUtama').removeClass('was-validated');
+                        $('#perdin_inputJenis').val(res.data.jenis); 
+                        $('#perdin_inputTglSpt').val(res.data.tglSpt); 
+                        $('#perdin_inputTglMulai').val(res.data.tglMulai); 
+                        $('#perdin_inputTglSelesai').val(res.data.tglSelesai); 
+                        $('#perdin_inputTujuan').val(res.data.tujuan); 
+                        $('#perdin_inputKegiatan').val(res.data.kegiatan); 
+                        $('#perdin_inputJenisDok').val(res.data.jenisDok || 'SPT'); 
+                        
+                        var st = String(res.data.status || "").toLowerCase(); 
+                        var currentDok = String(res.data.jenisDok || "").toUpperCase();
+                        
+                        if (st.includes('setuju') || st.includes('acc') || st.includes('ok')) {
+                            if (currentDok !== 'SPT') {
+                                $('#perdin_fieldHeader').prop('disabled', false); 
+                                $('#perdin_inputJenis, #perdin_inputTglSpt, #perdin_inputTglMulai, #perdin_inputTglSelesai, #perdin_inputTujuan, #perdin_inputKegiatan').prop('disabled', true).addClass('bg-light');
+                                $('#perdin_divUniFile').show(); 
+                                $('#perdin_inputJenisDok').prop('disabled', false).removeClass('bg-light'); 
+                                $('#perdin_inputFile').prop('disabled', false).prop('required', true);     
+                                $('#perdin_reqFileAsterisk').show();
+                                $('#perdin_btnSimpanForm').show().html('<i class="fas fa-sync mr-2"></i> UPDATE DOKUMEN');
+                                msgEl.removeClass('text-maroon text-muted text-danger text-success text-info').addClass('text-warning font-weight-bold').html('<i class="fas fa-exclamation-triangle mr-1"></i> SPT Disetujui: Menunggu Dokumen Final PDF.');
+                            } else {
+                                perdin_lockFormControls(true, res.data.status); 
+                                $('#perdin_inputFile').prop('required', false);
+                                $('#perdin_reqFileAsterisk').hide();
+                                msgEl.removeClass('text-maroon text-muted text-danger text-warning text-info').addClass('text-success font-weight-bold').html('<i class="fas fa-check-circle mr-1"></i> Terdaftar & Final. (Hanya Baca)');
+                            }
+                        } else { 
+                            perdin_lockFormControls(false); 
+                            $('#perdin_fieldHeader').prop('disabled', false); 
+                            $('#perdin_inputJenis, #perdin_inputTglSpt, #perdin_inputTglMulai, #perdin_inputTglSelesai, #perdin_inputTujuan, #perdin_inputKegiatan').prop('disabled', false).removeClass('bg-light');
+                            $('#perdin_divUniFile').show(); 
+                            $('#perdin_inputJenisDok, #perdin_inputFile').prop('disabled', false);
+                            $('#perdin_inputFile').prop('required', false); 
+                            $('#perdin_reqFileAsterisk').hide();
+                            
+                            var statusIcon = st.includes('tolak') ? '<i class="fas fa-times-circle mr-1"></i>' : '<i class="fas fa-pencil-alt mr-1"></i>';
+                            var statusColor = st.includes('tolak') ? 'text-danger' : 'text-primary';
+                            msgEl.removeClass('text-maroon text-muted text-success text-warning text-info').addClass(statusColor + ' font-weight-bold').html(statusIcon + ' Status: ' + perdin_escapeHtml(res.data.status) + ' (Mode Edit).');
+                            $('#perdin_btnSimpanForm').show().html('<i class="fas fa-save mr-2"></i> SIMPAN PERUBAHAN');
+                        }
+                        perdin_loadPesertaExisting(noSpt); 
+                    } else { 
+                        PERDIN_UNI_IS_NEW_SPT = true; PERDIN_UNI_TEMP_PESERTA = []; perdin_lockFormControls(false);
+                        $('#perdin_formUtama').removeClass('was-validated');
+                        $('#perdin_fieldHeader').prop('disabled', false); 
+                        $('#perdin_inputJenis, #perdin_inputTglSpt, #perdin_inputTglMulai, #perdin_inputTglSelesai, #perdin_inputTujuan, #perdin_inputKegiatan, #perdin_inputJenisDok, #perdin_inputFile').prop('disabled', false).removeClass('bg-light');
+                        $('#perdin_inputFile').prop('required', true); 
+                        $('#perdin_reqFileAsterisk').show();
+                        $('#perdin_btnSimpanForm').show().html('<i class="fas fa-save mr-2"></i> SIMPAN SPT BARU');
+                        msgEl.removeClass('text-maroon text-muted text-success text-warning text-danger').addClass('text-info font-weight-bold').html('<i class="fas fa-plus-circle mr-1"></i> Membuat Rekam SPT Baru.'); 
+                        $('#perdin_badgeStatusSpt').attr('class', 'float-right badge badge-sultan badge-sultan-light-info').text('BARU'); 
+                        perdin_renderTabelPeserta(); 
+                    } 
+                } catch (eParse) {
+                    inputEl.prop('disabled', false); btnEl.prop('disabled', false).html('<i class="fas fa-search"></i>');
+                    msgEl.removeClass('text-maroon').addClass('text-danger font-weight-bold').html('<i class="fas fa-times-circle mr-1"></i> Error membaca data.');
+                }
+            })
+            .withFailureHandler(function(err){
+                inputEl.prop('disabled', false); 
+                btnEl.prop('disabled', false).html('<i class="fas fa-search"></i>');
+                msgEl.removeClass('text-maroon').addClass('text-danger font-weight-bold').html('<i class="fas fa-wifi mr-1"></i> Koneksi server terputus.');
+            })
+            .cekInfoSpt(noSpt); 
+
+    } catch (eFatal) {
+        console.error("Crash on Search SPT: ", eFatal);
+        $('#perdin_inputNoSpt').prop('disabled', false);
+        $('#perdin_btnCariSpt').prop('disabled', false).html('<i class="fas fa-search"></i>');
+        alert("Terjadi kesalahan sistem: " + eFatal.message);
+    }
+};
 
 function perdin_lockFormControls(isLocked, statusText) { 
     PERDIN_IS_FORM_LOCKED = isLocked; 
@@ -808,7 +853,11 @@ function perdin_pilihPegawaiUni(idx) {
     $('#perdin_inputCariPegawai').val('').focus(); 
 }
 
-function perdin_hapusPesertaUni(index) { if(PERDIN_IS_FORM_LOCKED) return; PERDIN_UNI_TEMP_PESERTA.splice(index, 1); perdin_renderTabelPeserta(); }
+window.perdin_hapusPesertaUni = function(index) { 
+    if(PERDIN_IS_FORM_LOCKED) return; 
+    PERDIN_UNI_TEMP_PESERTA.splice(index, 1); 
+    perdin_renderTabelPeserta(); 
+};
 
 function perdin_renderTabelPeserta() { 
     if (PERDIN_UNI_TEMP_PESERTA.length === 0) { $('#perdin_tabelPeserta').empty(); $('#perdin_emptyState').show(); return; } 
@@ -856,12 +905,13 @@ function perdin_execSimpanBackend(payload, btn, txt) {
     google.script.run.withSuccessHandler(function(res){ 
         btn.prop('disabled', false).html(txt); 
         if(res === "Sukses") { 
-            $('#perdin_modalForm').modal('hide'); 
-            setTimeout(function(){
-                $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('padding-right', '');
+            // VAKSIN CLEAN LIFECYCLE
+            var $modal = $('#perdin_modalForm');
+            $modal.one('hidden.bs.modal', function () {
                 Sultan.notif.sukses('Perjalanan Dinas berhasil disimpan.');
                 perdin_tarikDataServer(); 
-            }, 400);
+            });
+            $modal.modal('hide'); 
         } else { Sultan.alert('error', 'Gagal', res); } 
     }).withFailureHandler(function(err){
         btn.prop('disabled', false).html(txt);
@@ -994,12 +1044,13 @@ function perdin_execVerifSide(e) {
     google.script.run.withSuccessHandler(function(res){ 
         btn.prop('disabled', false).html(txt);
         if(res === 'Sukses') { 
-            $('#perdin_modalVerifikasi').modal('hide'); 
-            setTimeout(function() {
-                $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('padding-right', '');
+            // VAKSIN CLEAN LIFECYCLE
+            var $modal = $('#perdin_modalVerifikasi');
+            $modal.one('hidden.bs.modal', function() {
                 Sultan.notif.sukses('Keputusan ' + st + ' tersimpan ke server!');
                 perdin_tarikDataServer(); 
-            }, 400);
+            });
+            $modal.modal('hide'); 
         } else { Sultan.alert('error', 'Gagal Eksekusi', res); } 
     }).withFailureHandler(function(err){
         btn.prop('disabled', false).html(txt); Sultan.alert('error', 'Koneksi Terputus', err.message);
@@ -1034,12 +1085,13 @@ function perdin_eksekusiHapusDinas(e) {
     google.script.run.withSuccessHandler(function(res){
         btn.prop('disabled', false).html(txt);
         if(res === 'Sukses') {
-            $('#perdin_modalHapus').modal('hide'); 
-            setTimeout(function() {
-                $('.modal-backdrop').remove(); $('body').removeClass('modal-open').css('padding-right', '');
+            // VAKSIN CLEAN LIFECYCLE
+            var $modal = $('#perdin_modalHapus');
+            $modal.one('hidden.bs.modal', function() {
                 Sultan.notif.sukses('SPT dan pesertanya telah dihapus permanen.');
                 perdin_tarikDataServer();
-            }, 400);
+            });
+            $modal.modal('hide');
         } else if (res === "KODE_SALAH") {
              Sultan.notif.gagal('Kode Validasi keamanan salah!'); $('#perdin_inputKodeHapus').focus();
         } else { Sultan.alert('error', 'Gagal Menghapus', res); }
@@ -1093,7 +1145,6 @@ function perdin_buildBadgeStatus(status, ket) {
     
     var badgeHtml = `<span class="badge badge-sultan ${style}"><i class="fas fa-${icon} mr-1"></i>${perdin_escapeHtml(labelStatus)}</span>`;
 
-    // VAKSIN UX: Tampilkan tombol baca catatan untuk SEMUA status jika admin meninggalkan pesan
     if (ket && ket.trim().length > 2 && ket !== "-") {
         var safeKet = perdin_escapeJs(ket);
         var btnCatatan = `<div class="mt-2"><button type="button" class="btn btn-xs btn-outline-danger font-weight-bold shadow-sm perdin-btn-catatan" style="font-size:10px; border-radius:4px;" data-pesan="${safeKet}"><i class="fas fa-comment-dots mr-1"></i> Baca Catatan</button></div>`;

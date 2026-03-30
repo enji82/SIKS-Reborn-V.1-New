@@ -15,7 +15,6 @@ function getDaftarDinas(tahun, bulan, status, _cb) {
     var sheet = ss.getSheetByName("Perjalanan_Dinas");
     if (!sheet) return JSON.stringify([]);
 
-    // BAB VIII: Menggunakan getDisplayValues agar aman
     var data = sheet.getDataRange().getDisplayValues();
     var result = [];
     
@@ -30,7 +29,6 @@ function getDaftarDinas(tahun, bulan, status, _cb) {
       var valTgl = row[3];
       var rowTahun = "", rowBulan = "";
 
-      // Format Teks karena menggunakan getDisplayValues
       var s = String(valTgl).replace(/'/g, "").trim();
       var parts = s.split(/[-/]/); 
       if (parts.length === 3) {
@@ -43,9 +41,9 @@ function getDaftarDinas(tahun, bulan, status, _cb) {
       var matchStatus = (fStatus === "") || (String(row[9]) == fStatus);
 
       if (matchTahun && matchBulan && matchStatus) {
-        var t1 = parseTime(row[11]); // Tgl Kirim
-        var t2 = parseTime(row[13]); // Last Update
-        var t3 = parseTime(row[15]); // Tgl Verif
+        var t1 = parseTime(row[11]); 
+        var t2 = parseTime(row[13]); 
+        var t3 = parseTime(row[15]); 
         var lastActivity = Math.max(t1, t2, t3);
 
         result.push({
@@ -65,10 +63,12 @@ function getDaftarDinas(tahun, bulan, status, _cb) {
 }
 
 /* ----------------------------------------------------------------------
-   2. SIMPAN & UPDATE SPT (UNIFIED)
+   2. SIMPAN & UPDATE SPT (UNIFIED - FULL VACCINE)
    ---------------------------------------------------------------------- */
 function simpanSptUnified(payload) {
+  var lock = LockService.getScriptLock();
   try {
+    lock.waitLock(10000); // VAKSIN ANTI TABRAKAN
     var ss = SpreadsheetApp.openById(ID_SS_DINAS);
     var sheetMaster = ss.getSheetByName("Perjalanan_Dinas");
     var sheetDetail = ss.getSheetByName("Perjalanan_Dinas_Peserta");
@@ -95,39 +95,51 @@ function simpanSptUnified(payload) {
       fileUrl = file.getUrl();
     }
 
-    if (payload.isNewSpt) {
+    // VAKSIN: Backend Source of Truth 
+    var dataM = sheetMaster.getDataRange().getDisplayValues();
+    var barisKetemu = -1;
+    var targetSpt = String(payload.header.noSpt).trim().toUpperCase();
+
+    for(var j = 1; j < dataM.length; j++){
+      if(String(dataM[j][1]).trim().toUpperCase() === targetSpt) {
+        barisKetemu = j + 1;
+        break;
+      }
+    }
+
+    if (barisKetemu === -1) {
+      // SPT BARU
       sheetMaster.appendRow([
         payload.header.jenis, payload.header.noSpt, tglSptTxt, tglMulaiTxt, tglSelesaiTxt,
         payload.header.tujuan, payload.header.kegiatan, payload.listPeserta.length, fileUrl, "Diproses", 
         payload.header.jenisDok, sysDateStr, userName, sysDateStr, userName, "", "", ""
       ]);
     } else {
-      // BAB VIII: Menggunakan getDisplayValues
-      var dataM = sheetMaster.getDataRange().getDisplayValues();
-      var found = false;
-      for(var j=1; j<dataM.length; j++){
-        if(String(dataM[j][1]).trim() === String(payload.header.noSpt).trim()) {
-          var r = j + 1;
-          if(payload.header.jenis) sheetMaster.getRange(r, 1).setValue(payload.header.jenis);
-          if(payload.header.tglSpt) sheetMaster.getRange(r, 3).setValue(tglSptTxt);
-          if(payload.header.tglMulai) sheetMaster.getRange(r, 4).setValue(tglMulaiTxt);
-          if(payload.header.tglSelesai) sheetMaster.getRange(r, 5).setValue(tglSelesaiTxt);
-          if(payload.header.tujuan) sheetMaster.getRange(r, 6).setValue(payload.header.tujuan);
-          if(payload.header.kegiatan) sheetMaster.getRange(r, 7).setValue(payload.header.kegiatan);
-          if(fileUrl !== "") sheetMaster.getRange(r, 9).setValue(fileUrl);
-          if(payload.header.jenisDok) sheetMaster.getRange(r, 11).setValue(payload.header.jenisDok);
+      // UPDATE SPT YANG SUDAH ADA
+      var r = barisKetemu;
+      if(payload.header.jenis) sheetMaster.getRange(r, 1).setValue(payload.header.jenis);
+      if(payload.header.tglSpt) sheetMaster.getRange(r, 3).setValue(tglSptTxt);
+      if(payload.header.tglMulai) sheetMaster.getRange(r, 4).setValue(tglMulaiTxt);
+      if(payload.header.tglSelesai) sheetMaster.getRange(r, 5).setValue(tglSelesaiTxt);
+      if(payload.header.tujuan) sheetMaster.getRange(r, 6).setValue(payload.header.tujuan);
+      if(payload.header.kegiatan) sheetMaster.getRange(r, 7).setValue(payload.header.kegiatan);
+      if(fileUrl !== "") sheetMaster.getRange(r, 9).setValue(fileUrl);
+      if(payload.header.jenisDok) sheetMaster.getRange(r, 11).setValue(payload.header.jenisDok);
 
-          var curJml = parseInt(dataM[j][7] || 0);
-          sheetMaster.getRange(r, 8).setValue(curJml + payload.listPeserta.length);
-          sheetMaster.getRange(r, 14).setValue(sysDateStr); 
-          sheetMaster.getRange(r, 15).setValue(userName);   
-          found = true;
-          break;
-        }
-      }
-      if(!found) return "Error: Data tidak ditemukan.";
+      sheetMaster.getRange(r, 8).setValue(payload.listPeserta.length); // Update sesuai jumlah list baru
+      sheetMaster.getRange(r, 14).setValue(sysDateStr); 
+      sheetMaster.getRange(r, 15).setValue(userName);   
     }
 
+    // VAKSIN: HAPUS SEMUA PESERTA LAMA AGAR TIDAK DOUBLE SAAT UPDATE
+    var dataP = sheetDetail.getDataRange().getValues();
+    for (var i = dataP.length - 1; i >= 1; i--) {
+        if (String(dataP[i][0]).trim().toUpperCase() === targetSpt) {
+            sheetDetail.deleteRow(i + 1);
+        }
+    }
+
+    // INSERT PESERTA BARU
     var rowsPeserta = [];
     payload.listPeserta.forEach(function(p){
       rowsPeserta.push([payload.header.noSpt, p.nip, p.nama, p.unit, "Diproses", "", sysDateStr]);
@@ -138,7 +150,9 @@ function simpanSptUnified(payload) {
 
     SpreadsheetApp.flush();
     return "Sukses";
-  } catch (e) { return "Error: " + e.toString(); }
+  } catch (e) { 
+    return (e.message.includes("lock")) ? "Error: Sistem sibuk." : "Error: " + e.toString(); 
+  } finally { lock.releaseLock(); }
 }
 
 /* ----------------------------------------------------------------------
@@ -150,7 +164,6 @@ function cariPegawaiDatabase(keyword) {
       var sheet = ss.getSheetByName("Database"); 
       if(!sheet) return JSON.stringify([]);
 
-      // BAB VIII: Menggunakan getDisplayValues
       var data = sheet.getDataRange().getDisplayValues();
       var result = []; 
       var k = keyword.toLowerCase();
@@ -174,7 +187,6 @@ function cekInfoSpt(noSpt) {
     var sheet = ss.getSheetByName("Perjalanan_Dinas");
     if (!sheet) return JSON.stringify({ found: false });
     
-    // BAB VIII: Menggunakan getDisplayValues
     var data = sheet.getDataRange().getDisplayValues();
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][1]).trim().toUpperCase() === String(noSpt).trim().toUpperCase()) {
@@ -203,7 +215,6 @@ function getPesertaDinas(noSpt) {
       var sheet = ss.getSheetByName("Perjalanan_Dinas_Peserta");
       if (!sheet) return JSON.stringify([]);
       
-      // BAB VIII: Menggunakan getDisplayValues
       var data = sheet.getDataRange().getDisplayValues();
       var result = [];
       for (var i = 1; i < data.length; i++) {
@@ -219,7 +230,9 @@ function getPesertaDinas(noSpt) {
    4. VERIFIKASI & HAPUS
    ---------------------------------------------------------------------- */
 function verifikasiDataDinas(payload) {
+  var lock = LockService.getScriptLock();
   try {
+    lock.waitLock(10000);
     var ss = SpreadsheetApp.openById(ID_SS_DINAS);
     var sheet = ss.getSheetByName("Perjalanan_Dinas");
     var row = parseInt(payload.recId);
@@ -239,20 +252,41 @@ function verifikasiDataDinas(payload) {
     
     SpreadsheetApp.flush();
     return "Sukses";
-  } catch(e) { return "Error: " + e.toString(); }
+  } catch(e) { 
+    return (e.message.includes("lock")) ? "Error: Sistem sibuk." : "Error: " + e.toString(); 
+  } finally { lock.releaseLock(); }
 }
 
 function hapusDataDinas(payload) {
+  var lock = LockService.getScriptLock();
   try {
+    lock.waitLock(10000);
     var d = new Date(); var kd = d.getFullYear()+""+String(d.getMonth()+1).padStart(2,'0')+""+String(d.getDate()).padStart(2,'0');
     if (payload.kode !== kd) return "KODE_SALAH";
       
     var ss = SpreadsheetApp.openById(ID_SS_DINAS);
-    var sheet = ss.getSheetByName("Perjalanan_Dinas");
-    sheet.deleteRow(parseInt(payload.recId));
+    var sheetMaster = ss.getSheetByName("Perjalanan_Dinas");
+    var sheetPeserta = ss.getSheetByName("Perjalanan_Dinas_Peserta");
+    
+    var rowId = parseInt(payload.recId);
+    var noSptDihapus = String(sheetMaster.getRange(rowId, 2).getValue()).trim().toUpperCase();
+    
+    // VAKSIN: CASCADING DELETE UNTUK PESERTA HANTU
+    if (sheetPeserta && noSptDihapus !== "") {
+        var dataP = sheetPeserta.getDataRange().getValues();
+        for (var i = dataP.length - 1; i >= 1; i--) {
+            if (String(dataP[i][0]).trim().toUpperCase() === noSptDihapus) {
+                sheetPeserta.deleteRow(i + 1);
+            }
+        }
+    }
+
+    sheetMaster.deleteRow(rowId);
     SpreadsheetApp.flush();
     return "Sukses";
-  } catch(e) { return "Error: " + e.toString(); }
+  } catch(e) { 
+    return (e.message.includes("lock")) ? "Error: Sistem sibuk." : "Error: " + e.toString(); 
+  } finally { lock.releaseLock(); }
 }
 
 /* ----------------------------------------------------------------------

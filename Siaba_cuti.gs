@@ -362,10 +362,21 @@ function setupPdfData(payload, dbData, pejabat, tglPengajuanFormat, tglMulaiIndo
     
     var thnMulai = parseInt(payload.tglMulai.split("-")[0]);
     if (dbData) { 
-        if (thnMulai===2023){d["N-2"]=dbData.fullRow[26]||"0";d["N-1"]=dbData.fullRow[28]||"0";d["N"]=dbData.fullRow[30]||"0"} 
-        else if (thnMulai===2024){d["N-2"]=dbData.fullRow[38]||"0";d["N-1"]=dbData.fullRow[40]||"0";d["N"]=dbData.fullRow[42]||"0"} 
-        else if (thnMulai===2025){d["N-2"]=dbData.fullRow[50]||"0";d["N-1"]=dbData.fullRow[52]||"0";d["N"]=dbData.fullRow[54]||"0"} 
-        else if (thnMulai===2026){d["N-2"]=dbData.fullRow[62]||"0";d["N-1"]=dbData.fullRow[64]||"0";d["N"]=dbData.fullRow[66]||"0"} 
+        var tahunDasar = 2023;
+        if (thnMulai >= tahunDasar) {
+            // Menggunakan Rumus Deret Aritmatika (Selisih 12 Index per Tahun)
+            var selisihTahun = thnMulai - tahunDasar;
+            var indexN = 30 + (selisihTahun * 12);
+            var indexN1 = indexN - 2; // Mundur 2 kolom dari N
+            var indexN2 = indexN - 4; // Mundur 4 kolom dari N
+
+            // Pastikan index tidak melebihi jumlah kolom di Excel (jaga-jaga jika Admin belum menambah kolom di Spreadsheet 2027)
+            if (indexN < dbData.fullRow.length) {
+                d["N"]   = dbData.fullRow[indexN]   || "0";
+                d["N-1"] = dbData.fullRow[indexN1] || "0";
+                d["N-2"] = dbData.fullRow[indexN2] || "0";
+            }
+        }
     }
     
     var j = String(payload.jenisCuti).toLowerCase(); var CK = "✓";

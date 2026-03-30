@@ -1,3 +1,4 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <div class="content-header pb-0">
   <div class="container-fluid">
     <div class="row mb-2">
@@ -277,35 +278,52 @@
     
     var DASHLAPBUL_GLOBAL_BELUM_LAPOR = { sd: [], tk: [], kb: [], sps: [] };
     var dashlapbul_pendingRequests = 0; 
+    var DASHLAPBUL_LAST_FETCH_TIME = 0;
 
     $(document).ready(function() {
-        // Setup Option Tahun Otomatis
-        var d = new Date(); d.setMonth(d.getMonth() - 1); 
-        var thn = d.getFullYear(); var bln = d.getMonth() + 1;
-        var $sel = $('#dashlapbul_dashTahun').empty();
-        for(var i = thn - 4; i <= thn + 1; i++){ $sel.append('<option value="'+i+'">'+i+'</option>'); }
-        $sel.val(thn); $('#dashlapbul_dashBulan').val(bln);
+        // VAKSIN DOM MARKER (Mencegah inisialisasi ganda oleh Router)
+        if ($('#dashlapbul_dashTahun').data('spa-init')) return;
+        $('#dashlapbul_dashTahun').data('spa-init', true);
 
-        // VAKSIN EVENT DELEGATION (Anti Memory Leak)
+        // 1. LOGIKA TANGGAL: DEFAULT BULAN LALU (VAKSIN OVERFLOW HARI)
+        var d = new Date(); 
+        d.setDate(1); // MENCEGAH BUG: Paksa tanggal ke 1 dulu sebelum mundur bulan
+        d.setMonth(d.getMonth() - 1); 
+        
+        var thn = d.getFullYear(); 
+        var bln = d.getMonth() + 1; // getMonth() dimulai dari 0
+
+        // 2. POPULASI FILTER TAHUN
+        var currentRealYear = new Date().getFullYear();
+        var $sel = $('#dashlapbul_dashTahun').empty();
+        // Load opsi dari tahun depan s.d 4 tahun ke belakang
+        for(var i = currentRealYear + 1; i >= currentRealYear - 4; i--) { 
+            var selectedStr = (i === thn) ? ' selected' : '';
+            $sel.append('<option value="' + i + '"' + selectedStr + '>' + i + '</option>'); 
+        }
+        
+        // 3. SET DEFAULT BULAN
+        $('#dashlapbul_dashBulan').val(bln);
+
+        // VAKSIN EVENT DELEGATION
         $(document).off('click', '#dashlapbul_btnTampilkan').on('click', '#dashlapbul_btnTampilkan', dashlapbul_loadDashboard);
         $(document).off('click', '#dashlapbul_btnCopyUtama').on('click', '#dashlapbul_btnCopyUtama', dashlapbul_copySemuaBelumLapor);
         $(document).off('click', '#dashlapbul_btnCopyModal').on('click', '#dashlapbul_btnCopyModal', dashlapbul_copySemuaBelumLapor);
         $(document).off('keyup', '#dashlapbul_cariBelumModal').on('keyup', '#dashlapbul_cariBelumModal', dashlapbul_filterBelumModal);
 
-        // Injeksi Library ChartJS jika belum ada
-        if (typeof Chart === 'undefined') {
-            $.getScript("https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js").done(function() {
-                dashlapbul_initChart(); dashlapbul_loadDashboard();
-            });
-        } else {
-            dashlapbul_initChart(); dashlapbul_loadDashboard();
-        }
+        // Inisiasi Langsung (Karena Chart.js sudah di-load via tag script di atas)
+        dashlapbul_initChart(); 
+        setTimeout(function() { dashlapbul_loadDashboard(); }, 100);
     });
 
     // ======================================================================
     // BAB VIII: FETCH DATA SERVER (DENGAN RACE CONDITION HANDLER)
     // ======================================================================
     function dashlapbul_loadDashboard() {
+        var currentTime = new Date().getTime();
+        // VAKSIN: Tolak eksekusi beruntun di bawah 1.5 detik
+        if (currentTime - DASHLAPBUL_LAST_FETCH_TIME < 1500) return; 
+        DASHLAPBUL_LAST_FETCH_TIME = currentTime;
         if (dashlapbul_pendingRequests > 0) return;
         
         dashlapbul_pendingRequests = 2; // Request SD dan PAUD

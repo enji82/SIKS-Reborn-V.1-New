@@ -377,7 +377,7 @@ function lapbulstatus_renderTabel(rows) {
             newRow.push(`<span class="badge badge-sultan ${badgeClass} px-3 py-1" style="font-size: 13px;">${j}</span>`);
             
             // Index 2 - 13: Status Bulan Jan s.d Des (Data dari Server Index 4 s.d 15)
-            for (var i = 4; i <= 15; i++) {
+            for (var i = 4; i < row.length; i++) {
                 newRow.push(lapbulstatus_buildBadgeSultan(row[i]));
             }
             

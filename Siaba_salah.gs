@@ -4,7 +4,7 @@
 
 // 1. PUSAT KONTROL DATABASE
 const KONFIG_SALAH = {
-  DB_ID: "1TZGrMiTuyvh2Xbo44RhJuWlQnOC5LzClsgIoNKtRFkY", // ID Database Boss
+  DB_ID: "1TZGrMiTuyvh2Xbo44RhJuWlQnOC5LzClsgIoNKtRFkY", 
   SHEET_NAMA: "Salah_Presensi"
 };
 
@@ -21,18 +21,17 @@ function getDaftarSalahPresensi(tahun, bulan) {
     var result = [];
 
     var fTahun  = (tahun) ? String(tahun).trim() : "";
-    var fTahunPendek = fTahun.length === 4 ? fTahun.substring(2) : fTahun; // Toleransi format '26
+    var fTahunPendek = fTahun.length === 4 ? fTahun.substring(2) : fTahun; 
 
     var mapBulan = { "Januari": "01", "Februari": "02", "Maret": "03", "April": "04", "Mei": "05", "Juni": "06", "Juli": "07", "Agustus": "08", "September": "09", "Oktober": "10", "November": "11", "Desember": "12" };
     var fBulanAngka = mapBulan[bulan] || ""; 
 
     for (var i = data.length - 1; i >= 1; i--) {
       var row = data[i];
-      if (!row[1] && !row[2]) continue; // Abaikan baris kosong
+      if (!row[1] && !row[2]) continue; 
 
       var txtTgl = String(row[3]).replace(/'/g, "").trim(); 
       
-      // VAKSIN TANGGAL: Cari "2026" atau "/26" atau "-26"
       if (fTahun !== "") {
           if (txtTgl.indexOf(fTahun) === -1 && txtTgl.indexOf("/" + fTahunPendek) === -1 && txtTgl.indexOf("-" + fTahunPendek) === -1) {
               continue; 
@@ -59,7 +58,7 @@ function getDaftarSalahPresensi(tahun, bulan) {
         userEdit: row[11], 
         tglVerif: row[12], 
         adminVerif: row[13],
-        npsn:     row[14] || "" // <--- AMBIL KOLOM O (INDEX 14) UNTUK FILTER PRIVATISASI!
+        npsn:     row[14] || "" 
       });
     }
     return JSON.stringify(result);
@@ -91,20 +90,23 @@ function simpanSalahAbsen(form) {
     var namaUser = form.user_login || "Guest";
     var tglKirim = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MM-yyyy HH:mm:ss");
     
-    // Cek Bentrok (Mencegah submit ganda)
     var data = sheet.getDataRange().getValues();
     for (var i = 1; i < data.length; i++) {
         var rowStatus = String(data[i][8]).toLowerCase();
         if(String(data[i][2]).replace(/'/g,"").trim() === form.nip_asn && !rowStatus.includes("tolak")) {
             var rowTglRaw = String(data[i][3]).replace(/'/g,"").trim();
-            // Samakan format YYYY-MM-DD
-            if (rowTglRaw === tglSimpan && String(data[i][5]).trim() === form.jenis) {
+            var normalizeToYMD = function(s) {
+                var c = s.trim(); if (c.match(/^\d{4}-\d{2}-\d{2}$/)) return c;
+                var p = c.split(/[-/]/);
+                if (p.length === 3 && p[0].length <= 2 && p[2].length === 4) return p[2] + "-" + p[1].padStart(2, '0') + "-" + p[0].padStart(2, '0');
+                return c;
+            };
+            if (normalizeToYMD(rowTglRaw) === normalizeToYMD(tglSimpan) && String(data[i][5]).trim() === form.jenis) {
                 return "Gagal: Data ganda! Anda sudah mengajukan untuk tanggal dan jenis presensi tersebut.";
             }
         }
     }
 
-    // SUSUN ARRAY (Total 15 Kolom A-O)
     var barisBaru = [
       form.unit_kerja, 
       form.nama_asn, 
@@ -115,12 +117,12 @@ function simpanSalahAbsen(form) {
       tglKirim, 
       namaUser, 
       "Diproses", 
-      "",  // Ket kosong
-      "",  // Tgl Edit kosong
-      "",  // User Edit kosong
-      "",  // Tgl Verif kosong
-      "",  // Admin verif kosong
-      form.npsn // <--- KOLOM O (NPSN) DITULIS KE SPREADSHEET!
+      "",  
+      "",  
+      "",  
+      "",  
+      "",  
+      form.npsn 
     ];
 
     sheet.appendRow(barisBaru);
@@ -143,7 +145,6 @@ function updateSalahAbsen(form) {
     var targetNip = String(form.nip_lama).trim();
     var statusLama = String(sheet.getRange(barisKetemu, 9).getValue()).trim();
 
-    // Cegah edit jika sudah disetujui
     if (statusLama.toLowerCase().includes("ok") || statusLama.toLowerCase().includes("setuju")) {
         return "Gagal: Data sudah Disetujui dan tidak bisa diedit.";
     }
@@ -156,23 +157,18 @@ function updateSalahAbsen(form) {
 
     var tglEdit = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "dd-MM-yyyy HH:mm:ss");
 
-    // Update Input Dasar
     sheet.getRange(barisKetemu, 4).setValue("'" + form.tanggal);      
     sheet.getRange(barisKetemu, 5).setValue("'" + jamSimpan);     
     sheet.getRange(barisKetemu, 6).setValue(form.jenis);           
 
-    // =========================================================
-    // LOGIKA RESET SULTAN (Revisi/Ditolak -> Diproses)
-    // =========================================================
-    sheet.getRange(barisKetemu, 9).setValue("Diproses"); // Kembalikan ke Diproses
-    sheet.getRange(barisKetemu, 10).setValue("");        // Hapus Catatan Penolakan Lama
-    sheet.getRange(barisKetemu, 13).setValue("");        // Hapus Tgl Verif Lama
-    sheet.getRange(barisKetemu, 14).setValue("");        // Hapus Admin Verif Lama
+    sheet.getRange(barisKetemu, 9).setValue("Diproses"); 
+    sheet.getRange(barisKetemu, 10).setValue("");        
+    sheet.getRange(barisKetemu, 13).setValue("");        
+    sheet.getRange(barisKetemu, 14).setValue("");        
 
-    // Catat Jejak Edit & NPSN
     sheet.getRange(barisKetemu, 11).setValue("'" + tglEdit);       
     sheet.getRange(barisKetemu, 12).setValue(form.user_login); 
-    sheet.getRange(barisKetemu, 15).setValue(form.npsn); // <--- KOLOM O DIUPDATE!
+    sheet.getRange(barisKetemu, 15).setValue(form.npsn); 
 
     return "Sukses Data Berhasil Diupdate";
   } catch (e) {

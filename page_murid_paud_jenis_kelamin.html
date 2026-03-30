@@ -18,8 +18,7 @@
 
         <div class="card-sultan mb-3">
           <div class="card-body py-2 px-3 border-left-dark">
-            <div class="d-flex align-items-center justify-content-between cursor-pointer" 
-                 data-toggle="collapse" data-target="#paudjk_infoCollapse" aria-expanded="false">
+            <div class="d-flex align-items-center justify-content-between cursor-pointer" data-toggle="collapse" data-target="#paudjk_infoCollapse" aria-expanded="false">
               <div class="d-flex align-items-center text-maroon font-weight-bold">
                 <i class="fas fa-info-circle mr-2"></i> Informasi
               </div>
@@ -55,6 +54,12 @@
                 <button type="button" id="paudjk_btnRefresh" class="btn bg-white border shadow-sm text-secondary" title="Segarkan Data dari Server">
                     <i class="fas fa-sync-alt text-maroon"></i>
                 </button>
+
+                <div class="ml-auto d-none d-md-block"></div>
+
+                <button type="button" id="paudjk_btnExport" class="btn btn-success text-white font-weight-bold shadow-sm" title="Unduh data dalam format Excel">
+                    <i class="fas fa-file-excel mr-1"></i> Unduh Excel
+                </button>
             </div>
         </div>
 
@@ -75,8 +80,7 @@
                 
                 <thead class="font-weight-bold text-dark bg-light text-nowrap">
                   <tr>
-                    <th rowspan="2" class="align-middle bg-white text-maroon text-left pl-3 py-1" style="position:sticky; left:0; z-index:50; min-width:250px; border-right: 2px solid #dee2e6; border-bottom: 2px solid #800000 !important;">Unit Kerja</th>
-                    <th rowspan="2" class="align-middle bg-white text-center py-1" style="border-bottom: 2px solid #800000 !important;">NPSN</th>
+                    <th rowspan="2" class="align-middle bg-white text-maroon text-left pl-3 py-1 col-sticky-left" style="z-index:50; min-width:250px; border-right: 2px solid #dee2e6; border-bottom: 2px solid #800000 !important;">Unit Kerja</th>
                     <th rowspan="2" class="align-middle bg-white text-center py-1" style="border-bottom: 2px solid #800000 !important;">Jenjang</th>
                     <th rowspan="2" class="align-middle bg-white text-center py-1" style="border-bottom: 2px solid #800000 !important;">Bln</th>
                     <th rowspan="2" class="align-middle bg-white text-center py-1" style="border-bottom: 2px solid #800000 !important;">Thn</th>
@@ -99,47 +103,24 @@
                   </tr>
 
                   <tr class="small text-nowrap">
-                    <th class="text-center py-1" style="background-color: #e3f2fd; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #e3f2fd; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #e3f2fd; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center py-1" style="background-color: #e8f5e9; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #e8f5e9; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #e8f5e9; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center py-1" style="background-color: #fff3e0; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #fff3e0; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #fff3e0; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center py-1" style="background-color: #f3e5f5; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #f3e5f5; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #f3e5f5; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center py-1" style="background-color: #fce4ec; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #fce4ec; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #fce4ec; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center py-1" style="background-color: #e0f2f1; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #e0f2f1; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #e0f2f1; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center py-1" style="background-color: #e0f7fa; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #e0f7fa; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #e0f7fa; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center py-1" style="background-color: #fff8e1; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #fff8e1; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #fff8e1; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center py-1" style="background-color: #efebe9; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #efebe9; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #efebe9; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center py-1" style="background-color: #f5f5f5; border-bottom: 2px solid #800000 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #f5f5f5; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center py-1" style="background-color: #f5f5f5; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
-                    <th class="text-center border-left py-1" style="background-color: #ffecb3; border-bottom: 2px solid #800000 !important; border-left: 2px solid #ffecb3 !important;">L</th>
-                    <th class="text-center py-1" style="background-color: #ffecb3; border-bottom: 2px solid #800000 !important;">P</th>
-                    <th class="text-center border-right-0 py-1" style="background-color: #ffecb3; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #e3f2fd; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #e3f2fd; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #e3f2fd; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #e8f5e9; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #e8f5e9; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #e8f5e9; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #fff3e0; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #fff3e0; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #fff3e0; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #f3e5f5; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #f3e5f5; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #f3e5f5; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #fce4ec; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #fce4ec; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #fce4ec; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #e0f2f1; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #e0f2f1; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #e0f2f1; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #e0f7fa; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #e0f7fa; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #e0f7fa; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #fff8e1; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #fff8e1; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #fff8e1; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #efebe9; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #efebe9; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #efebe9; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center py-1" style="background-color: #f5f5f5; border-bottom: 2px solid #800000 !important;">L</th><th class="text-center py-1" style="background-color: #f5f5f5; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center py-1" style="background-color: #f5f5f5; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
+                    <th class="text-center border-left py-1" style="background-color: #ffecb3; border-bottom: 2px solid #800000 !important; border-left: 2px solid #ffecb3 !important;">L</th><th class="text-center py-1" style="background-color: #ffecb3; border-bottom: 2px solid #800000 !important;">P</th><th class="text-center border-right-0 py-1" style="background-color: #ffecb3; border-bottom: 2px solid #800000 !important; font-weight:bold;">Jml</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
                 
                 <tfoot class="bg-light font-weight-bold text-nowrap" style="border-top: 3px solid #800000;">
                     <tr>
-                        <th class="border-right text-right bg-white text-maroon pr-3 align-middle py-2" style="position:sticky; left:0; z-index:40; border-right: 2px solid #dee2e6;">TOTAL KESELURUHAN</th>
-                        <th class="py-2"></th><th class="py-2"></th><th class="py-2"></th><th class="py-2"></th>
+                        <th class="border-right text-right bg-white text-maroon pr-3 align-middle py-2" colspan="4" style="position:sticky; left:0; z-index:40; border-right: 2px solid #dee2e6;">TOTAL KESELURUHAN</th>
                         <th class="text-center text-dark py-2"></th>
                         <th class="text-center py-2"></th><th class="text-center py-2"></th><th class="text-center py-2"></th>
                         <th class="text-center py-2"></th><th class="text-center py-2"></th><th class="text-center py-2"></th>
@@ -167,7 +148,7 @@
 
 <script>
 // ======================================================================
-// ISOLASI VARIABEL GLOBAL (MASTER BLUEPRINT V8 - BAB I)
+// ISOLASI VARIABEL GLOBAL
 // ======================================================================
 var PAUDJK_CACHE_DATA = [];
 var PAUDJK_TABEL_INSTANCE = null;
@@ -175,11 +156,7 @@ var PAUDJK_TABEL_INSTANCE = null;
 var PAUDJK_USER_AKTIF = "";
 var PAUDJK_IS_ADMIN = false;
 var PAUDJK_UNIT_TERKUNCI = "";
-var PAUDJK_NPSN_TERKUNCI = "";
 
-// =================================================================
-// 1. INITIALIZATION & SPA VACCINE DELEGATION
-// =================================================================
 $(document).ready(function() {
     PAUDJK_TABEL_INSTANCE = null;
     $('#paudjk_tableState').hide();
@@ -190,19 +167,16 @@ $(document).ready(function() {
         var user = typeof getSesiUser === 'function' ? getSesiUser() : {};
         PAUDJK_USER_AKTIF = user.nama_lengkap || user.fullname || user.nama || user.username || "User Web";
         PAUDJK_IS_ADMIN = (user.role || "").toLowerCase().includes("admin");
-        PAUDJK_NPSN_TERKUNCI = user.npsn || user.username || ""; 
-    } catch(e) { PAUDJK_NPSN_TERKUNCI = ""; PAUDJK_IS_ADMIN = false; }
+    } catch(e) { PAUDJK_IS_ADMIN = false; }
 
     $(document).off('click', '#paudjk_btnRefresh').on('click', '#paudjk_btnRefresh', paudjk_tarikDataServer);
     $(document).off('change', '#paudjk_filterJenjang').on('change', '#paudjk_filterJenjang', paudjk_updateFilterUnit);
     $(document).off('change', '#paudjk_filterUnit').on('change', '#paudjk_filterUnit', paudjk_terapkanFilterLokal);
+    $(document).off('click', '#paudjk_btnExport').on('click', '#paudjk_btnExport', paudjk_exportExcel);
 
     paudjk_validasiAksesUser();
 });
 
-// =================================================================
-// 2. GATEKEEPER & FETCH DATA
-// =================================================================
 function paudjk_validasiAksesUser() {
     if (PAUDJK_IS_ADMIN) {
         $('#paudjk_filterContainer').show();
@@ -210,7 +184,9 @@ function paudjk_validasiAksesUser() {
         $('#paudjk_filterUnit').empty().append('<option value="SEMUA">- Semua Unit Kerja -</option>').prop('disabled', false).removeClass('bg-light text-maroon font-weight-bold');
         paudjk_tarikDataServer(); 
     } else {
-        if (!PAUDJK_NPSN_TERKUNCI) {
+        // Asumsi data NPSN diakses dari user session (diambil dari app utama)
+        var userNpsn = getSesiUser().npsn;
+        if (!userNpsn) {
             $('#paudjk_filterUnit').empty().append('<option value="">AKSES DITOLAK</option>');
             $('#paudjk_loadingText').html('<span class="text-danger"><i class="fas fa-ban mb-2"></i><br>Akses ditolak: Sesi login tidak valid.</span>');
             return;
@@ -224,17 +200,15 @@ function paudjk_validasiAksesUser() {
                     $('#paudjk_loadingText').html(`<span class="text-danger"><i class="fas fa-exclamation-triangle mb-2"></i><br>${paudjk_escapeHtml(dataUnit.error)}</span>`);
                     return;
                 }
-
                 PAUDJK_UNIT_TERKUNCI = dataUnit.unitKerja;
                 $('#paudjk_filterUnit').empty().append($('<option>', {value: PAUDJK_UNIT_TERKUNCI, text: PAUDJK_UNIT_TERKUNCI})).prop('disabled', true);
-                
                 paudjk_tarikDataServer();
             })
             .withFailureHandler(function(err) {
                 $('#paudjk_filterUnit').empty().append('<option value="">ERROR SERVER</option>');
                 $('#paudjk_loadingText').html(`<span class="text-danger"><i class="fas fa-wifi mb-2"></i><br>Koneksi Terputus: ${paudjk_escapeHtml(err.message)}</span>`);
             })
-            .getUnitKerjaByNpsnPTK(PAUDJK_NPSN_TERKUNCI);
+            .getUnitKerjaByNpsnPTK(userNpsn);
     }
 }
 
@@ -320,45 +294,43 @@ function paudjk_updateFilterUnit() {
 }
 
 // =================================================================
-// 3. INISIALISASI DATATABLES (VAKSIN ANTI NaN, BLINK & COLOR MAP)
+// 3. INISIALISASI DATATABLES (VAKSIN ANTI FREEZE & GRAND TOTAL)
 // =================================================================
 
 function paudjk_getColColor(i) {
-    if (i >= 6 && i <= 8) return "#e3f2fd"; 
-    if (i >= 9 && i <= 11) return "#e8f5e9"; 
-    if (i >= 12 && i <= 14) return "#fff3e0"; 
-    if (i >= 15 && i <= 17) return "#f3e5f5"; 
-    if (i >= 18 && i <= 20) return "#fce4ec"; 
-    if (i >= 21 && i <= 23) return "#e0f2f1"; 
-    if (i >= 24 && i <= 26) return "#e0f7fa"; 
-    if (i >= 27 && i <= 29) return "#fff8e1"; // TOTAL USIA
-    if (i >= 30 && i <= 32) return "#efebe9"; // KELAS A
-    if (i >= 33 && i <= 35) return "#f5f5f5"; // KELAS B
-    if (i >= 36 && i <= 38) return "#ffecb3"; // TOTAL KELAS
+    if (i >= 5 && i <= 7) return "#e3f2fd"; 
+    if (i >= 8 && i <= 10) return "#e8f5e9"; 
+    if (i >= 11 && i <= 13) return "#fff3e0"; 
+    if (i >= 14 && i <= 16) return "#f3e5f5"; 
+    if (i >= 17 && i <= 19) return "#fce4ec"; 
+    if (i >= 20 && i <= 22) return "#e0f2f1"; 
+    if (i >= 23 && i <= 25) return "#e0f7fa"; 
+    if (i >= 26 && i <= 28) return "#fff8e1"; // TOTAL USIA
+    if (i >= 29 && i <= 31) return "#efebe9"; // KELAS A
+    if (i >= 32 && i <= 34) return "#f5f5f5"; // KELAS B
+    if (i >= 35 && i <= 37) return "#ffecb3"; // TOTAL KELAS
     return "#ffffff";
 }
 
 function paudjk_initDataTables() {
     PAUDJK_TABEL_INSTANCE = $('#paudjk_tabelUtama').DataTable({
         "destroy": true, 
-        "ordering": false, // VAKSIN MUTLAK ANTI HEADER BENGKAK
-        "pageLength": 15, 
+        "ordering": false, 
+        "pageLength": 10, // VAKSIN: Tampilan default 10 baris
         "autoWidth": false,
         "deferRender": true, 
         "dom": "<'row mb-2'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
                "<'row'<'col-sm-12'<'table-responsive sultan-scroll'tr>>>" +
                "<'row mt-2'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
         "columnDefs": [ 
-            { "targets": 0, "width": "auto", "className": "col-sticky-left bg-white align-middle border-right text-left font-weight-bold text-dark text-nowrap" }, 
-            { "targets": [1,3,4], "width": "1%", "className": "text-center align-middle text-nowrap" },
-            { "targets": 2, "width": "1%", "className": "text-center align-middle font-weight-bold text-maroon text-nowrap" },
-            { "targets": 5, "width": "1%", "className": "text-center align-middle font-weight-bold text-dark text-nowrap" },
-            // Matriks 33 Kolom (Index 6 s.d 38)
-            { "targets": Array.from({length: 33}, (_, i) => i + 6), "width": "1%", "className": "text-center align-middle text-nowrap" }
+            { "targets": 0, "width": "auto", "className": "col-sticky-left bg-white align-middle border-right text-left font-weight-bold text-dark px-3" }, 
+            { "targets": [1,2,3], "width": "1%", "className": "text-center align-middle text-nowrap px-2" },
+            { "targets": 4, "width": "1%", "className": "text-center align-middle font-weight-bold text-dark text-nowrap px-2" },
+            // Matriks 33 Kolom (Index 5 s.d 37)
+            { "targets": Array.from({length: 33}, (_, i) => i + 5), "width": "1%", "className": "text-center align-middle text-nowrap px-2" }
         ],
         "language": { "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json", "emptyTable": "Tidak ada data Murid PAUD untuk filter yang dipilih." },
         
-        // VAKSINASI PEWARNAAN DOM MURNI
         "createdRow": function(row, data, dataIndex) {
              var tds = row.children;
              for (var i = 0; i < tds.length; i++) {
@@ -368,32 +340,33 @@ function paudjk_initDataTables() {
                  if (i === 0) {
                      cell.style.position = 'sticky'; cell.style.left = '0'; cell.style.zIndex = '2'; cell.style.backgroundColor = '#ffffff';
                  } 
-                 else if (i >= 6) { 
-                     // Ambil Peta Warna
-                     var bgColor = paudjk_getColColor(i);
-                     cell.style.backgroundColor = bgColor;
-                     if (i === 36) cell.style.borderLeft = '2px solid #ffecb3'; // Garis pemisah Total Kelas
-
-                     // Penebalan dan Pemburaman Data
+                 else if (i === 4) { // Rombel
                      if (rawVal === "0" || rawVal === "-" || rawVal === "") {
                          cell.innerHTML = '<span class="text-muted opacity-50">-</span>';
                      } else {
                          cell.classList.add('font-weight-bold', 'text-dark');
-                         // Kolom Jumlah (Setiap index ke-8, 11, 14, dst.. atau (i-8)%3 == 0)
-                         if ((i - 8) % 3 === 0) {
-                             cell.classList.replace('text-dark', 'text-maroon'); 
-                         }
+                     }
+                 }
+                 else if (i >= 5) { 
+                     cell.style.backgroundColor = paudjk_getColColor(i);
+                     if (i === 35) cell.style.borderLeft = '2px solid #ffecb3'; // Garis pemisah Total Kelas
+
+                     if (rawVal === "0" || rawVal === "-" || rawVal === "") {
+                         cell.innerHTML = '<span class="text-muted opacity-50">-</span>';
+                     } else {
+                         cell.classList.add('font-weight-bold');
+                         if ((i - 7) % 3 === 0) cell.classList.add('text-maroon'); 
+                         else cell.classList.add('text-dark');
                      }
                  }
              }
         },
 
-        // VAKSIN MUTLAK FOOTER: Anti-NaN dengan Regex Stripper Lapis Baja
         "footerCallback": function(row, data, start, end, display) {
             var api = this.api();
             if (api.data().length === 0) return;
 
-            var extractNumber = function (str) { 
+            var extractNumber = function(str) { 
                 if (typeof str === 'number') return str;
                 if (!str) return 0;
                 var cleanStr = String(str).replace(/(<([^>]+)>)/gi, ""); 
@@ -401,34 +374,38 @@ function paudjk_initDataTables() {
                 return isNaN(num) ? 0 : num; 
             };
             
-            // Loop kolom Rombel (5) dan Matriks Angka (6 s.d 38)
-            for (var i = 5; i <= 38; i++) {
-                var total = api.column(i, {page: 'current'}).data().reduce(function(a, b) {
-                    return extractNumber(a) + extractNumber(b);
-                }, 0);
-
-                var cell = $(api.column(i).footer());
-                cell.html(total === 0 ? '-' : total.toLocaleString('id-ID'));
-                
-                var cellDom = cell[0];
-                if(cellDom && i >= 6) {
-                    var bgColor = paudjk_getColColor(i);
-                    cellDom.style.backgroundColor = bgColor;
-                    if (i === 36) cellDom.style.borderLeft = '2px solid #ffecb3'; 
-                    
-                    if ((i - 8) % 3 === 0) {
-                        cellDom.classList.add('text-maroon');
-                    } else {
-                        cellDom.classList.add('text-dark');
-                    }
+            // Loop dari index 4 (Rombel) s.d 37
+            var totalArr = new Array(34).fill(0);
+            api.rows({ search: 'applied' }).data().each(function(rowData) {
+                for (var i = 4; i <= 37; i++) {
+                    totalArr[i-4] += extractNumber(rowData[i]);
                 }
+            });
+
+            // Colspan untuk 0,1,2,3 (Unit Kerja, Jenjang, Bln, Thn)
+            var footHtml = '<th class="border-right text-right bg-white text-maroon pr-3 align-middle py-2" colspan="4" style="position:sticky; left:0; z-index:40; border-right: 2px solid #dee2e6;">TOTAL KESELURUHAN</th>';
+            
+            // Injeksi Total Rombel
+            footHtml += '<th class="text-center text-dark py-2 font-weight-bold">' + (totalArr[0] === 0 ? '-' : totalArr[0].toLocaleString('id-ID')) + '</th>';
+            
+            // Injeksi Sisa Kolom Angka
+            for (var c = 5; c <= 37; c++) {
+                var val = totalArr[c - 4];
+                var txtVal = (val === 0) ? '-' : val.toLocaleString('id-ID');
+                var bgColor = paudjk_getColColor(c);
+                var style = 'background-color: ' + bgColor + ' !important;';
+                if (c === 35) style += ' border-left: 2px solid #ffecb3 !important;';
+                var textColor = ((c - 7) % 3 === 0) ? 'text-maroon' : 'text-dark';
+                footHtml += '<th class="text-center py-2 font-weight-bold ' + textColor + '" style="' + style + '">' + txtVal + '</th>';
             }
+
+            $(api.table().footer()).html('<tr>' + footHtml + '</tr>');
         }
     });
 }
 
 // =================================================================
-// 4. FILTER LOKAL & INJEKSI DATA (ZERO BLINK MUTLAK)
+// 4. FILTER LOKAL & INJEKSI DATA (NPSN HILANG & NO URUT HILANG)
 // =================================================================
 function paudjk_terapkanFilterLokal() {
     if (!PAUDJK_TABEL_INSTANCE) return;
@@ -460,16 +437,15 @@ function paudjk_renderTabel(dataRows) {
     dataRows.forEach(function(row) {
         var arrRow = [];
         
-        arrRow.push(paudjk_escapeHtml(row[0] || "-")); 
-        arrRow.push(paudjk_escapeHtml(row[1] || "-"));
-        arrRow.push(paudjk_escapeHtml(row[2] || "-"));
-        arrRow.push(paudjk_escapeHtml(row[3] || "-"));
-        arrRow.push(paudjk_escapeHtml(row[4] || "-"));
+        arrRow.push(paudjk_escapeHtml(row[0] || "-")); // Unit Kerja
+        arrRow.push(paudjk_escapeHtml(row[2] || "-")); // Jenjang (NPSN dihilangkan)
+        arrRow.push(paudjk_escapeHtml(row[3] || "-")); // Bulan
+        arrRow.push(paudjk_escapeHtml(row[4] || "-")); // Tahun
         
-        // VAKSINASI ANTI-NaN PRA-RENDER: Pastikan nilai kosong mutlak menjadi "0"
         var rombelVal = (row[5] === undefined || row[5] === null || String(row[5]).trim() === "" || String(row[5]).trim() === "-") ? "0" : String(row[5]).trim();
         arrRow.push(paudjk_escapeHtml(rombelVal));
 
+        // Matriks Data: Kolom index 6 s.d 38 dari Database backend
         for (var c = 6; c <= 38; c++) {
             var val = (row[c] === undefined || row[c] === null || String(row[c]).trim() === "" || String(row[c]).trim() === "-") ? "0" : String(row[c]).trim();
             arrRow.push(paudjk_escapeHtml(val));
@@ -482,8 +458,41 @@ function paudjk_renderTabel(dataRows) {
 }
 
 // =================================================================
-// 5. HELPER UTILITIES: PEMBERSIH XSS
+// 5. EXPORT EXCEL (VAKSINASI CLIENT SIDE)
 // =================================================================
+function paudjk_exportExcel() {
+    if (!PAUDJK_TABEL_INSTANCE) { Sultan.alert('warning', 'Belum Ada Data', 'Silakan tunggu data dimuat terlebih dahulu.'); return; }
+
+    var btn = $('#paudjk_btnExport'); var txt = btn.html();
+    btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Mengekspor...');
+
+    setTimeout(function() {
+        var info = PAUDJK_TABEL_INSTANCE.page.info();
+        var currLen = info.length; var currPage = info.page;
+        PAUDJK_TABEL_INSTANCE.page.len(-1).draw('page');
+
+        var tableClone = document.getElementById('paudjk_tabelUtama').cloneNode(true);
+        PAUDJK_TABEL_INSTANCE.page.len(currLen).page(currPage).draw('page');
+
+        $(tableClone).find('[style*="display: none"]').remove();
+        $(tableClone).find('th, td').css({ 'border': '1px solid #000000', 'border-collapse': 'collapse', 'font-family': 'Arial, sans-serif' });
+        $(tableClone).find('.opacity-50').css('color', '#cccccc'); 
+
+        var htmlData = tableClone.outerHTML;
+        var template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>' + htmlData + '</body></html>';
+        var blob = new Blob([template], { type: 'application/vnd.ms-excel' });
+        var url = URL.createObjectURL(blob);
+        
+        var a = document.createElement('a'); a.href = url;
+        a.download = 'Rekap_PAUD_Gender.xls';
+        document.body.appendChild(a); a.click();
+        
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+        btn.prop('disabled', false).html(txt);
+        Sultan.notif.sukses('Data berhasil diunduh ke Excel.');
+    }, 200); 
+}
+
 function paudjk_escapeHtml(text) { 
     if (!text) return ""; 
     return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); 

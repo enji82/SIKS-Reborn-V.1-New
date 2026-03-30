@@ -80,10 +80,8 @@
                     
                     <thead class="font-weight-bold text-dark bg-light text-nowrap">
                       <tr>
-                        <th rowspan="2" class="align-middle bg-white text-maroon text-left pl-3 py-1" style="position:sticky; left:0; z-index:50; min-width:250px; border-right: 2px solid #dee2e6; border-bottom: 2px solid #800000 !important;">Unit Kerja</th>
+                        <th rowspan="2" class="align-middle bg-white text-maroon text-left pl-3 py-1 col-sticky-left" style="z-index:50; min-width:250px; border-right: 2px solid #dee2e6; border-bottom: 2px solid #800000 !important;">Unit Kerja</th>
                         
-                        <th rowspan="2" class="align-middle bg-white py-1" style="border-bottom: 2px solid #800000 !important;">NPSN</th>
-                        <th rowspan="2" class="align-middle bg-white py-1" style="border-bottom: 2px solid #800000 !important;">Status</th>
                         <th rowspan="2" class="align-middle bg-white py-1" style="border-bottom: 2px solid #800000 !important;">Bln</th>
                         <th rowspan="2" class="align-middle bg-white py-1" style="border-bottom: 2px solid #800000 !important;">Thn</th>
                         <th rowspan="2" class="align-middle bg-white py-1" style="border-bottom: 2px solid #800000 !important;">Rombel</th>
@@ -132,8 +130,7 @@
                     
                     <tfoot class="bg-light font-weight-bold text-nowrap" style="border-top: 3px solid #800000;">
                         <tr>
-                            <th class="border-right text-right bg-white text-maroon pr-3 align-middle py-2" style="position:sticky; left:0; z-index:40; border-right: 2px solid #dee2e6;">TOTAL KESELURUHAN</th>
-                            <th class="py-2"></th><th class="py-2"></th><th class="py-2"></th><th class="py-2"></th>
+                            <th class="border-right text-right bg-white text-maroon pr-3 align-middle py-2 col-sticky-left" colspan="3" style="z-index:40; border-right: 2px solid #dee2e6;">TOTAL KESELURUHAN</th>
                             <th class="text-center text-dark py-2"></th>
                             <th class="text-center py-2"></th><th class="text-center py-2"></th><th class="text-center py-2"></th>
                             <th class="text-center py-2"></th><th class="text-center py-2"></th><th class="text-center py-2"></th>
@@ -157,7 +154,7 @@
 
 <script>
 // ======================================================================
-// ISOLASI VARIABEL GLOBAL (MASTER BLUEPRINT V8 - BAB I)
+// ISOLASI VARIABEL GLOBAL
 // ======================================================================
 var SDKELAS_CACHE_DATA = [];
 var SDKELAS_TABEL_INSTANCE = null;
@@ -167,9 +164,6 @@ var SDKELAS_IS_ADMIN = false;
 var SDKELAS_UNIT_TERKUNCI = "";
 var SDKELAS_NPSN_TERKUNCI = "";
 
-// =================================================================
-// 1. INITIALIZATION & SPA VACCINE DELEGATION
-// =================================================================
 $(document).ready(function() {
     SDKELAS_TABEL_INSTANCE = null;
     $('#sdkelas_tableState').hide();
@@ -186,16 +180,11 @@ $(document).ready(function() {
     $(document).off('click', '#sdkelas_btnRefresh').on('click', '#sdkelas_btnRefresh', sdkelas_tarikDataServer);
     $(document).off('change', '#sdkelas_filterStatus').on('change', '#sdkelas_filterStatus', sdkelas_updateFilterUnit);
     $(document).off('change', '#sdkelas_filterUnit').on('change', '#sdkelas_filterUnit', sdkelas_terapkanFilterLokal);
-    
-    // VAKSINASI DELEGASI: Tombol Unduh Excel
     $(document).off('click', '#sdkelas_btnExport').on('click', '#sdkelas_btnExport', sdkelas_exportExcel);
 
     sdkelas_validasiAksesUser();
 });
 
-// =================================================================
-// 2. GATEKEEPER & FETCH DATA
-// =================================================================
 function sdkelas_validasiAksesUser() {
     if (SDKELAS_IS_ADMIN) {
         $('#sdkelas_filterContainer').show();
@@ -214,18 +203,16 @@ function sdkelas_validasiAksesUser() {
                 var dataUnit = JSON.parse(resUnit);
                 if (dataUnit.error) {
                     $('#sdkelas_filterUnit').empty().append('<option value="">AKSES DITOLAK</option>');
-                    $('#sdkelas_loadingText').html(`<span class="text-danger"><i class="fas fa-exclamation-triangle mb-2"></i><br>${sdkelas_escapeHtml(dataUnit.error)}</span>`);
+                    $('#sdkelas_loadingText').html('<span class="text-danger"><i class="fas fa-exclamation-triangle mb-2"></i><br>' + sdkelas_escapeHtml(dataUnit.error) + '</span>');
                     return;
                 }
-
                 SDKELAS_UNIT_TERKUNCI = dataUnit.unitKerja;
-                $('#sdkelas_filterUnit').empty().append($('<option>', {value: SDKELAS_UNIT_TERKUNCI, text: SDKELAS_UNIT_TERKUNCI})).prop('disabled', true);
-                
+                $('#sdkelas_filterUnit').empty().append('<option value="' + SDKELAS_UNIT_TERKUNCI + '">' + SDKELAS_UNIT_TERKUNCI + '</option>').prop('disabled', true);
                 sdkelas_tarikDataServer();
             })
             .withFailureHandler(function(err) {
                 $('#sdkelas_filterUnit').empty().append('<option value="">ERROR SERVER</option>');
-                $('#sdkelas_loadingText').html(`<span class="text-danger"><i class="fas fa-wifi mb-2"></i><br>Koneksi Terputus: ${sdkelas_escapeHtml(err.message)}</span>`);
+                $('#sdkelas_loadingText').html('<span class="text-danger"><i class="fas fa-wifi mb-2"></i><br>Koneksi Terputus: ' + sdkelas_escapeHtml(err.message) + '</span>');
             })
             .getUnitKerjaByNpsnPTK(SDKELAS_NPSN_TERKUNCI);
     }
@@ -243,7 +230,6 @@ function sdkelas_tarikDataServer() {
 
     google.script.run.withSuccessHandler(function(dataArray) {
         btn.prop('disabled', false).html('<i class="fas fa-sync-alt text-maroon"></i>');
-        
         if (!Array.isArray(dataArray)) {
             $('#sdkelas_loadingText').html('<span class="text-danger"><i class="fas fa-times-circle mb-2"></i><br>Gagal memproses struktur JSON Server.</span>');
             return;
@@ -251,26 +237,20 @@ function sdkelas_tarikDataServer() {
 
         try {
             SDKELAS_CACHE_DATA = dataArray;
-
             if (SDKELAS_IS_ADMIN) {
-                var uniqueStatus = new Set();
+                var uniqueStatus = {};
                 SDKELAS_CACHE_DATA.forEach(function(row) {
-                    var s = String(row[2] || "").trim(); // Index 2 = Status (Negeri/Swasta)
-                    if(s) uniqueStatus.add(s);
+                    var s = String(row[2] || "").trim(); // Status
+                    if(s) uniqueStatus[s] = true;
                 });
-                
                 var selStatus = $('#sdkelas_filterStatus'); var curS = selStatus.val();
                 selStatus.empty().append('<option value="SEMUA">- Semua Status -</option>');
-                Array.from(uniqueStatus).sort().forEach(function(s) { selStatus.append($('<option>', {value: s, text: s})); });
-                if(curS && uniqueStatus.has(curS)) selStatus.val(curS);
-
+                Object.keys(uniqueStatus).sort().forEach(function(s) { selStatus.append('<option value="' + s + '">' + s + '</option>'); });
+                if(curS && uniqueStatus[curS]) selStatus.val(curS);
                 sdkelas_updateFilterUnit();
             }
 
-            if (!$.fn.DataTable.isDataTable('#sdkelas_tabelUtama')) {
-                sdkelas_initDataTables();
-            }
-
+            if (!$.fn.DataTable.isDataTable('#sdkelas_tabelUtama')) { sdkelas_initDataTables(); }
             sdkelas_terapkanFilterLokal();
 
             $('#sdkelas_loadingState').hide();
@@ -280,7 +260,6 @@ function sdkelas_tarikDataServer() {
         } catch (e) {
             $('#sdkelas_loadingText').html('<span class="text-danger"><i class="fas fa-exclamation-triangle mb-2"></i><br>Gagal merakit tabel: ' + sdkelas_escapeHtml(e.message) + '</span>');
         }
-
     }).withFailureHandler(function(e) {
         btn.prop('disabled', false).html('<i class="fas fa-sync-alt text-maroon"></i>');
         $('#sdkelas_loadingText').html('<span class="text-danger"><i class="fas fa-wifi mb-2"></i><br>Koneksi Server Terputus.</span>');
@@ -289,60 +268,47 @@ function sdkelas_tarikDataServer() {
 
 function sdkelas_updateFilterUnit() {
     if(!SDKELAS_IS_ADMIN) return;
-
     var selStatus = $('#sdkelas_filterStatus').val();
-    var uniqueUnit = new Set();
+    var uniqueUnit = {};
     
     SDKELAS_CACHE_DATA.forEach(function(row) {
         var u = String(row[0] || "").trim(); 
         var s = String(row[2] || "").trim(); 
-        
-        if (selStatus === "SEMUA" || s === selStatus) {
-            if(u) uniqueUnit.add(u);
-        }
+        if (selStatus === "SEMUA" || s === selStatus) { if(u) uniqueUnit[u] = true; }
     });
 
     var selUnit = $('#sdkelas_filterUnit'); var curU = selUnit.val();
     selUnit.empty().append('<option value="SEMUA">- Semua Unit Kerja -</option>');
-    Array.from(uniqueUnit).sort().forEach(function(u) { selUnit.append($('<option>', {value: u, text: u})); });
-    
-    if(curU && uniqueUnit.has(curU)) selUnit.val(curU);
-    else selUnit.val('SEMUA');
-
+    Object.keys(uniqueUnit).sort().forEach(function(u) { selUnit.append('<option value="' + u + '">' + u + '</option>'); });
+    if(curU && uniqueUnit[curU]) selUnit.val(curU); else selUnit.val('SEMUA');
     sdkelas_terapkanFilterLokal();
 }
 
-// =================================================================
-// 3. INISIALISASI DATATABLES
-// =================================================================
-
 function sdkelas_getColColor(i) {
-    if (i >= 6 && i <= 8) return "#e3f2fd"; 
-    if (i >= 9 && i <= 11) return "#e8f5e9"; 
-    if (i >= 12 && i <= 14) return "#fff3e0"; 
-    if (i >= 15 && i <= 17) return "#f3e5f5"; 
-    if (i >= 18 && i <= 20) return "#fce4ec"; 
-    if (i >= 21 && i <= 23) return "#e0f2f1"; 
-    if (i >= 24 && i <= 26) return "#ffecb3"; 
+    if (i >= 4 && i <= 6) return "#e3f2fd"; 
+    if (i >= 7 && i <= 9) return "#e8f5e9"; 
+    if (i >= 10 && i <= 12) return "#fff3e0"; 
+    if (i >= 13 && i <= 15) return "#f3e5f5"; 
+    if (i >= 16 && i <= 18) return "#fce4ec"; 
+    if (i >= 19 && i <= 21) return "#e0f2f1"; 
+    if (i >= 22 && i <= 24) return "#ffecb3"; 
     return "#ffffff";
 }
 
 function sdkelas_initDataTables() {
+    var cols = [];
+    for(var i=0; i<=24; i++) cols.push(i);
+
     SDKELAS_TABEL_INSTANCE = $('#sdkelas_tabelUtama').DataTable({
-        "destroy": true, 
-        "ordering": false, 
-        "pageLength": 15, 
-        "autoWidth": false,
-        "deferRender": true, 
+        "destroy": true, "ordering": false, "pageLength": 10, "autoWidth": false, "deferRender": true, 
         "dom": "<'row mb-2'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
                "<'row'<'col-sm-12'<'table-responsive sultan-scroll'tr>>>" +
                "<'row mt-2'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
         "columnDefs": [ 
-            { "targets": 0, "width": "auto", "className": "col-sticky-left bg-white align-middle border-right text-left font-weight-bold text-dark text-nowrap" }, 
-            { "targets": [1,3,4], "width": "1%", "className": "text-center align-middle text-nowrap" },
-            { "targets": 2, "width": "1%", "className": "text-center align-middle font-weight-bold text-maroon text-nowrap" },
-            { "targets": 5, "width": "1%", "className": "text-center align-middle font-weight-bold text-dark text-nowrap" },
-            { "targets": Array.from({length: 21}, (_, i) => i + 6), "width": "1%", "className": "text-center align-middle text-nowrap" }
+            { "targets": 0, "width": "auto", "className": "col-sticky-left bg-white align-middle border-right text-left font-weight-bold text-dark px-3" }, 
+            { "targets": [1,2], "width": "1%", "className": "text-center align-middle text-nowrap px-2" },
+            { "targets": 3, "width": "1%", "className": "text-center align-middle font-weight-bold text-dark text-nowrap px-2" },
+            { "targets": cols.slice(4), "width": "1%", "className": "text-center align-middle text-nowrap px-2" }
         ],
         "language": { "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Indonesian.json", "emptyTable": "Tidak ada data Murid SD untuk filter yang dipilih." },
         
@@ -355,18 +321,16 @@ function sdkelas_initDataTables() {
                  if (i === 0) {
                      cell.style.position = 'sticky'; cell.style.left = '0'; cell.style.zIndex = '2'; cell.style.backgroundColor = '#ffffff';
                  } 
-                 else if (i >= 6) { 
+                 else if (i >= 4) { 
                      var bgColor = sdkelas_getColColor(i);
                      cell.style.backgroundColor = bgColor;
-                     if (i === 24) cell.style.borderLeft = '2px solid #ffecb3'; 
+                     if (i === 22) cell.style.borderLeft = '2px solid #ffecb3'; 
 
                      if (rawVal === "0" || rawVal === "-" || rawVal === "") {
                          cell.innerHTML = '<span class="text-muted opacity-50">-</span>';
                      } else {
                          cell.classList.add('font-weight-bold', 'text-dark');
-                         if ((i - 8) % 3 === 0) {
-                             cell.classList.replace('text-dark', 'text-maroon'); 
-                         }
+                         if ((i - 6) % 3 === 0) cell.classList.replace('text-dark', 'text-maroon'); 
                      }
                  }
              }
@@ -384,34 +348,35 @@ function sdkelas_initDataTables() {
                 return isNaN(num) ? 0 : num; 
             };
             
-            for (var i = 5; i <= 26; i++) {
-                var total = api.column(i, {page: 'current'}).data().reduce(function(a, b) {
+            var totalArr = [];
+            for (var i = 3; i <= 24; i++) {
+                var sum = api.column(i, {search: 'applied'}).data().reduce(function(a, b) {
                     return extractNumber(a) + extractNumber(b);
                 }, 0);
+                totalArr.push(sum);
+            }
 
-                var cell = $(api.column(i).footer());
-                cell.html(total === 0 ? '-' : total.toLocaleString('id-ID'));
-                
-                var cellDom = cell[0];
-                if(cellDom && i >= 6) {
-                    var bgColor = sdkelas_getColColor(i);
-                    cellDom.style.backgroundColor = bgColor;
-                    if (i === 24) cellDom.style.borderLeft = '2px solid #ffecb3'; 
-                    
-                    if ((i - 8) % 3 === 0) {
-                        cellDom.classList.add('text-maroon');
-                    } else {
-                        cellDom.classList.add('text-dark');
-                    }
+            var cellRombel = api.column(3).footer();
+            if (cellRombel) {
+                cellRombel.innerHTML = (totalArr[0] === 0 ? '-' : totalArr[0].toLocaleString('id-ID'));
+                cellRombel.className = 'text-center text-dark py-2 font-weight-bold';
+            }
+
+            for (var c = 4; c <= 24; c++) {
+                var val = totalArr[c - 3];
+                var cellDom = api.column(c).footer();
+                if (cellDom) {
+                    cellDom.innerHTML = (val === 0 ? '-' : val.toLocaleString('id-ID'));
+                    cellDom.style.backgroundColor = sdkelas_getColColor(c);
+                    if (c === 22) cellDom.style.borderLeft = '2px solid #ffecb3';
+                    var textColor = ((c - 6) % 3 === 0) ? 'text-maroon' : 'text-dark';
+                    cellDom.className = 'text-center py-2 font-weight-bold ' + textColor;
                 }
             }
         }
     });
 }
 
-// =================================================================
-// 4. FILTER LOKAL & INJEKSI DATA
-// =================================================================
 function sdkelas_terapkanFilterLokal() {
     if (!SDKELAS_TABEL_INSTANCE) return;
 
@@ -422,14 +387,10 @@ function sdkelas_terapkanFilterLokal() {
         var rUnit = String(row[0] || "").trim().toUpperCase(); 
         var rStatus = String(row[2] || "").trim();
 
-        if (SDKELAS_IS_ADMIN) {
-            if (fUnit !== "SEMUA" && fUnit !== "" && rUnit !== fUnit) return false;
-        } else {
-            if (rUnit !== fUnit) return false;
-        }
+        if (SDKELAS_IS_ADMIN) { if (fUnit !== "SEMUA" && fUnit !== "" && rUnit !== fUnit) return false; } 
+        else { if (rUnit !== fUnit) return false; }
 
         if (fStatus !== "SEMUA" && fStatus !== "" && rStatus !== fStatus) return false;
-
         return true;
     });
     
@@ -443,16 +404,14 @@ function sdkelas_renderTabel(dataRows) {
         var arrRow = [];
         
         arrRow.push(sdkelas_escapeHtml(row[0] || "-")); 
-        arrRow.push(sdkelas_escapeHtml(row[1] || "-"));
-        arrRow.push(sdkelas_escapeHtml(row[2] || "-"));
-        arrRow.push(sdkelas_escapeHtml(row[3] || "-"));
-        arrRow.push(sdkelas_escapeHtml(row[4] || "-"));
+        arrRow.push(sdkelas_escapeHtml(row[3] || "-")); // Bulan (NPSN & Status ilang)
+        arrRow.push(sdkelas_escapeHtml(row[4] || "-")); // Tahun
         
-        var rombelVal = (row[5] === undefined || row[5] === null || String(row[5]).trim() === "" || String(row[5]).trim() === "-") ? "0" : String(row[5]).trim();
+        var rombelVal = (row[5] === undefined || row[5] === null || String(row[5]).trim() === "" || String(row[5]).trim() === "0") ? "-" : String(row[5]).trim();
         arrRow.push(sdkelas_escapeHtml(rombelVal));
 
         for (var c = 6; c <= 26; c++) {
-            var val = (row[c] === undefined || row[c] === null || String(row[c]).trim() === "" || String(row[c]).trim() === "-") ? "0" : String(row[c]).trim();
+            var val = (row[c] === undefined || row[c] === null || String(row[c]).trim() === "" || String(row[c]).trim() === "0") ? "-" : String(row[c]).trim();
             arrRow.push(sdkelas_escapeHtml(val));
         }
 
@@ -462,69 +421,38 @@ function sdkelas_renderTabel(dataRows) {
     SDKELAS_TABEL_INSTANCE.clear().rows.add(dtArray).draw(false);
 }
 
-// =================================================================
-// 5. API EKSPOR EXCEL (NATIVE HTML TO XLS)
-// =================================================================
 function sdkelas_exportExcel() {
-    if (!SDKELAS_TABEL_INSTANCE) {
-        Sultan.alert('warning', 'Belum Ada Data', 'Silakan tunggu data dimuat terlebih dahulu.');
-        return;
-    }
-
-    var btn = $('#sdkelas_btnExport');
-    var txt = btn.html();
+    if (!SDKELAS_TABEL_INSTANCE) { Sultan.alert('warning', 'Belum Ada Data', 'Silakan tunggu data dimuat terlebih dahulu.'); return; }
+    var btn = $('#sdkelas_btnExport'); var txt = btn.html();
     btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Mengekspor...');
 
     setTimeout(function() {
-        // 1. Simpan State Halaman & Tarik Semua Data ke DOM (Bypass Pagination)
         var info = SDKELAS_TABEL_INSTANCE.page.info();
-        var currLen = info.length;
-        var currPage = info.page;
+        var currLen = info.length; var currPage = info.page;
         SDKELAS_TABEL_INSTANCE.page.len(-1).draw('page');
 
-        // 2. Kloning Tabel Utama yang sedang tampil penuh
         var tableClone = document.getElementById('sdkelas_tabelUtama').cloneNode(true);
-        
-        // 3. Kembalikan Paginasi seperti semula (Zero-Blink UX)
         SDKELAS_TABEL_INSTANCE.page.len(currLen).page(currPage).draw('page');
 
-        // 4. Proses Styling Clone Table untuk Format Excel
-        $(tableClone).find('th, td').css({
-            'border': '1px solid #000000',
-            'border-collapse': 'collapse',
-            'font-family': 'Arial, sans-serif'
-        });
-        
-        // Buang elemen yang bersembunyi atau span yang hanya dekoratif (jika ada)
+        $(tableClone).find('[style*="display: none"]').remove();
+        $(tableClone).find('th, td').css({ 'border': '1px solid #000000', 'border-collapse': 'collapse', 'font-family': 'Arial, sans-serif' });
         $(tableClone).find('.opacity-50').css('color', '#cccccc'); 
 
-        // 5. Rakit String URI Microsoft Excel XML-HTML Format
         var htmlData = tableClone.outerHTML;
-        var template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>' + htmlData + '</body></html>';
-        
-        // 6. Konversi ke Blob untuk Bypass Browser Limit
+        var template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>' + htmlData + '<' + '/body><' + '/html>';
         var blob = new Blob([template], { type: 'application/vnd.ms-excel' });
         var url = URL.createObjectURL(blob);
         
-        // 7. Eksekusi Unduhan Auto-Click
-        var a = document.createElement('a');
-        a.href = url;
+        var a = document.createElement('a'); a.href = url;
         a.download = 'Rekap_Jumlah_Murid_SD_Kelas.xls';
-        document.body.appendChild(a);
-        a.click();
+        document.body.appendChild(a); a.click();
         
-        // 8. Cleanup Memori
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
+        document.body.removeChild(a); URL.revokeObjectURL(url);
         btn.prop('disabled', false).html(txt);
         Sultan.notif.sukses('Data berhasil diunduh ke Excel.');
-    }, 200); // Sedikit delay agar DOM painting DataTables page(-1) terselesaikan
+    }, 200); 
 }
 
-// =================================================================
-// 6. HELPER UTILITIES: PEMBERSIH XSS
-// =================================================================
 function sdkelas_escapeHtml(text) { 
     if (!text) return ""; 
     return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); 
